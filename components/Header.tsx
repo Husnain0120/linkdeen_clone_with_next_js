@@ -1,3 +1,5 @@
+import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import {
   Briefcase,
   Home,
@@ -7,6 +9,7 @@ import {
 } from "lucide-react";
 
 import Link from "next/link";
+import { Button } from "./ui/button";
 
 const Header = () => {
   return (
@@ -54,8 +57,19 @@ const Header = () => {
         </Link>
 
         {/* User Button  if SignIN*/}
-
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
         {/* Sign in Button if not signIN */}
+
+        <SignedOut>
+          <Button asChild variant="secondary">
+            <SignInButton />
+          </Button>
+          <Button asChild variant="destructive">
+            <SignUpButton />
+          </Button>
+        </SignedOut>
       </div>
     </div>
   );
