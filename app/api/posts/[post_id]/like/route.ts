@@ -1,7 +1,7 @@
 import connectDB from "@/mongodb/db";
 import { Post } from "@/mongodb/models/post.models";
 import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // GET Method to fetch likes for a post
 export async function GET(
@@ -12,7 +12,7 @@ export async function GET(
 
   try {
     // Await params to ensure proper access
-    const { post_id } = params; // Destructure post_id from params
+    const { post_id } = await params; // Ensure params is awaited
 
     // Find the post by its ID
     const post = await Post.findById(post_id);
@@ -66,7 +66,7 @@ export async function POST(
 
   try {
     // Await params to ensure proper access
-    const { post_id } = params; // Destructure post_id from params
+    const { post_id } = await params; // Ensure params is awaited
 
     // Find the post by its ID
     const post = await Post.findById(post_id);

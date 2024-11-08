@@ -130,9 +130,9 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
                   : "Post liked successfully",
                 error: liked ? "Failed to unlike post" : "Failed to like post",
               });
-            {
-              !isAuthor && redirect("/sign-up");
-            }
+            // {
+            //   !isAuthor && redirect("/sign-up");
+            // }
           }}
         >
           <ThumbsUpIcon

@@ -5,13 +5,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 // GET method to fetch a post
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { post_id: string } }
 ) {
   await connectDB();
 
   try {
-    // Ensure that params are accessed asynchronously
+    // Ensure params are correctly accessed
     const postId = params.post_id;
 
     const post = await Post.findById(postId);
@@ -22,6 +22,7 @@ export async function GET(
 
     return NextResponse.json(post);
   } catch (error) {
+    console.error("Error fetching post:", error);
     return NextResponse.json(
       { error: "An error occurred while fetching the post" },
       { status: 500 }
@@ -29,6 +30,7 @@ export async function GET(
   }
 }
 
+// Interface for the request body
 export interface DeletePostRequestBody {
   userId: string;
 }
@@ -60,7 +62,7 @@ export async function DELETE(
   }
 
   try {
-    // Ensure params are awaited before using them
+    // Ensure params are accessed correctly
     const postId = params.post_id;
 
     // Find and delete the post
@@ -75,7 +77,7 @@ export async function DELETE(
     await post.removePost();
     return NextResponse.json({ message: "Post deleted successfully" });
   } catch (error) {
-    // Handle any error during the deletion process
+    console.error("Error deleting post:", error);
     return NextResponse.json(
       { error: "An error occurred while deleting the post" },
       { status: 500 }
