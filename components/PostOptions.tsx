@@ -122,14 +122,14 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
           className="postButton"
           onClick={() => {
             const promise = likeOrUnlikePost();
-            isAuthor &&
-              toast.promise(promise, {
-                loading: liked ? "Unliking post... " : "Liking post....",
-                success: liked
-                  ? "Post unliked successfully"
-                  : "Post liked successfully",
-                error: liked ? "Failed to unlike post" : "Failed to like post",
-              });
+            // isAuthor &&
+            //   toast.promise(promise, {
+            //     loading: liked ? "Unliking post... " : "Liking post....",
+            //     success: liked
+            //       ? "Post unliked successfully"
+            //       : "Post liked successfully",
+            //     error: liked ? "Failed to unlike post" : "Failed to like post",
+            //   });
             // {
             //   !isAuthor && redirect("/sign-up");
             // }
