@@ -1,11 +1,12 @@
 import PostFeed from "@/components/PostFeed";
 import PostForm from "@/components/PostForm";
-
 import UserInformation from "@/components/UserInformation";
 import Widget from "@/components/widget";
 import connectDB from "@/mongodb/db";
 import { Post } from "@/mongodb/models/post.models";
 import { SignedIn } from "@clerk/nextjs";
+import ReloadPostsButton from "@/components/ReloadPostsButton"; // Import the client component
+// import { toast } from "sonner";
 
 export const revalidate = 0;
 
@@ -14,11 +15,9 @@ export default async function Home() {
 
   const posts = await Post.getAllPost();
 
-  // console.log(posts);
-
   return (
-    <div className=" grid grid-cols-8  mt-5 sm:px-5">
-      <section className=" hidden md:inline md:col-span-2">
+    <div className="grid grid-cols-8 mt-5 sm:px-5">
+      <section className="hidden md:inline md:col-span-2">
         {/* UserInformation */}
         <SignedIn>
           <UserInformation posts={posts} />
@@ -33,9 +32,12 @@ export default async function Home() {
 
         {/* Post Feed */}
         <PostFeed posts={posts} />
+
+        {/* Reload Posts Button */}
+        <ReloadPostsButton />
       </section>
 
-      <section className=" hidden xl:inline justify-center col-span-2">
+      <section className="hidden xl:inline justify-center col-span-2">
         {/* widget*/}
         <Widget />
       </section>

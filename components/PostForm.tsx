@@ -7,6 +7,7 @@ import { ImageIcon, XIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import createPostAction from "@/actions/createPostAction";
 import { toast } from "sonner";
+import ReloadPostsButton from "./ReloadPostsButton";
 
 function PostForm() {
   const ref = useRef<HTMLFormElement>(null);
@@ -101,6 +102,7 @@ function PostForm() {
         )}
 
         <div className="flex justify-end mt-2 space-x-2">
+          <ReloadPostsButton />
           <Button
             type="button"
             variant={preview ? "secondary" : "outline"}
@@ -123,6 +125,7 @@ function PostForm() {
           )}
         </div>
       </form>
+
       <hr className="mt-2 border-gray-300" />
     </div>
   );
