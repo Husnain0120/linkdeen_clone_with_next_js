@@ -131,7 +131,7 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
                 error: liked ? "Failed to unlike post" : "Failed to like post",
               });
             {
-              !isAuthor && router.replace("/");
+              !isAuthor && router.replace("/sign-up");
             }
           }}
         >
