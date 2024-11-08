@@ -12,13 +12,13 @@ import { UnlikePostRequestBody } from "@/app/api/posts/[post_id]/unlike/route";
 import CommentFeed from "./CommentFeed";
 import CommentForm from "./CommentForm";
 import { toast } from "sonner";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const PostOptions = ({ post }: { post: IPostDocument }) => {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const { user } = useUser();
   const [liked, setLiked] = useState(false);
-
+  const router = useRouter();
   // Ensure likes is an array of strings
   const [likes, setLikes] = useState<string[]>(
     Array.isArray(post.likes) ? post.likes : post.likes ? [post.likes] : [] // Normalize post.likes to always be an array
@@ -131,7 +131,7 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
                 error: liked ? "Failed to unlike post" : "Failed to like post",
               });
             {
-              !isAuthor && redirect("/sign-up");
+              !isAuthor && router.replace("/");
             }
           }}
         >
