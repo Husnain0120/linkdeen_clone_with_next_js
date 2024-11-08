@@ -4,18 +4,16 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET Method to fetch likes for a post
-export async function GET(
-  request: Request,
-  { params }: { params: { post_id: string } }
-) {
+export async function GET(request: NextRequest) {
   await connectDB();
 
   try {
-    // Await params to ensure proper access
-    const { post_id } = await params; // Ensure params is awaited
+    // Extract the post_id from the URL
+    const url = new URL(request.url); // Create a URL object from the request URL
+    const postId = url.pathname.split("/")[3]; // Extract post_id from the pathname
 
     // Find the post by its ID
-    const post = await Post.findById(post_id);
+    const post = await Post.findById(postId);
 
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
@@ -38,10 +36,7 @@ export interface LikePostRequestBody {
 }
 
 // POST Method to like a post
-export async function POST(
-  request: Request,
-  { params }: { params: { post_id: string } }
-) {
+export async function POST(request: NextRequest) {
   await connectDB();
 
   // Await the authentication result and get the userId
@@ -65,11 +60,12 @@ export async function POST(
   }
 
   try {
-    // Await params to ensure proper access
-    const { post_id } = await params; // Ensure params is awaited
+    // Extract the post_id from the URL
+    const url = new URL(request.url); // Create a URL object from the request URL
+    const postId = url.pathname.split("/")[3]; // Extract post_id from the pathname
 
     // Find the post by its ID
-    const post = await Post.findById(post_id);
+    const post = await Post.findById(postId);
 
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });

@@ -15,7 +15,7 @@ export async function POST(
   await connectDB();
 
   // Ensure that params are awaited
-  const { post_id } = await params; // Await params to access post_id
+  const { post_id } = params; // Await params to access post_id
 
   // Get the userId from the request body
   const { userId }: UnlikePostRequestBody = await request.json();
