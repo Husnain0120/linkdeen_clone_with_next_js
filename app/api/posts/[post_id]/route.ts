@@ -4,16 +4,15 @@ import { getAuth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET method to fetch a post
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { post_id: string } }
-) {
+export async function GET(request: NextRequest) {
   await connectDB();
 
   try {
-    // Ensure params are correctly accessed
-    const postId = params.post_id;
+    // Extract the post_id from the URL path
+    const url = new URL(request.url); // Create a URL object from the request URL
+    const postId = url.pathname.split("/")[3]; // Extract post_id from the pathname
 
+    // Find the post by its ID
     const post = await Post.findById(postId);
 
     if (!post) {
@@ -36,10 +35,7 @@ export interface DeletePostRequestBody {
 }
 
 // DELETE method to delete a post
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { post_id: string } }
-) {
+export async function DELETE(request: NextRequest) {
   // Extract the userId from Clerk's authentication
   const { userId: authUserId } = getAuth(request);
 
@@ -62,8 +58,9 @@ export async function DELETE(
   }
 
   try {
-    // Ensure params are accessed correctly
-    const postId = params.post_id;
+    // Extract the post_id from the URL path
+    const url = new URL(request.url); // Create a URL object from the request URL
+    const postId = url.pathname.split("/")[3]; // Extract post_id from the pathname
 
     // Find and delete the post
     const post = await Post.findById(postId);
