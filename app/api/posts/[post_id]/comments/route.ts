@@ -5,14 +5,22 @@ import { Post } from "@/mongodb/models/post.models";
 import { IUser } from "@/types/user.type";
 
 // GET handler for fetching comments on a post
-export async function GET(
-  request: NextRequest, // Use NextRequest
-  { params }: { params: { post_id: string } } // Ensure params are correctly passed
-) {
+export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const post = await Post.findById(params.post_id);
+    // Extract post_id from the request URL
+    const { searchParams } = new URL(request.url);
+    const postId = searchParams.get("post_id"); // Get post_id from the URL parameters
+
+    if (!postId) {
+      return NextResponse.json(
+        { error: "Post ID is missing" },
+        { status: 400 }
+      );
+    }
+
+    const post = await Post.findById(postId);
 
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
@@ -35,16 +43,24 @@ export interface AddCommentRequestBody {
   text: string;
 }
 
-export async function POST(
-  request: NextRequest, // Use NextRequest
-  { params }: { params: { post_id: string } } // Ensure params are correctly passed
-) {
+export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
+    // Extract post_id from the request URL
+    const { searchParams } = new URL(request.url);
+    const postId = searchParams.get("post_id");
+
+    if (!postId) {
+      return NextResponse.json(
+        { error: "Post ID is missing" },
+        { status: 400 }
+      );
+    }
+
     const { user, text }: AddCommentRequestBody = await request.json();
 
-    const post = await Post.findById(params.post_id);
+    const post = await Post.findById(postId);
 
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
