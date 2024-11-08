@@ -88,9 +88,9 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
     setLikes(newLikeData);
 
     // If the post is authored by the logged-in user, show a success toast directly
-    if (isAuthor) {
-      toast.success("Post liked successfully");
-    }
+    // if (isAuthor) {
+    //   toast.success("Post liked successfully");
+    // }
   };
 
   return (
@@ -122,17 +122,17 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
           className="postButton"
           onClick={() => {
             const promise = likeOrUnlikePost();
-            // isAuthor &&
-            //   toast.promise(promise, {
-            //     loading: liked ? "Unliking post... " : "Liking post....",
-            //     success: liked
-            //       ? "Post unliked successfully"
-            //       : "Post liked successfully",
-            //     error: liked ? "Failed to unlike post" : "Failed to like post",
-            //   });
-            // {
-            //   !isAuthor && redirect("/sign-up");
-            // }
+            isAuthor &&
+              toast.promise(promise, {
+                loading: liked ? "Unliking post... " : "Liking post....",
+                success: liked
+                  ? "Post unliked successfully"
+                  : "Post liked successfully",
+                error: liked ? "Failed to unlike post" : "Failed to like post",
+              });
+            {
+              !isAuthor && redirect("/sign-up");
+            }
           }}
         >
           <ThumbsUpIcon
