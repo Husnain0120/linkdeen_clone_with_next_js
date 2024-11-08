@@ -6,7 +6,6 @@ import { NextResponse } from "next/server";
 
 // GET handler for fetching comments on a post
 export async function GET(
-  request: Request,
   { params }: { params: { post_id: string } } // Explicitly typing params
 ) {
   try {
