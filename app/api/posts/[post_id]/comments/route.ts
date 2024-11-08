@@ -2,12 +2,12 @@ import connectDB from "@/mongodb/db";
 import { ICommentBase } from "@/mongodb/models/comment.models";
 import { Post } from "@/mongodb/models/post.models";
 import { IUser } from "@/types/user.type";
-
 import { NextResponse } from "next/server";
 
+// GET handler for fetching comments on a post
 export async function GET(
   request: Request,
-  { params }: { params: { post_id: string } }
+  { params }: { params: { post_id: string } } // Explicitly typing params
 ) {
   try {
     await connectDB();
@@ -30,6 +30,7 @@ export async function GET(
   }
 }
 
+// POST handler for adding a comment to a post
 export interface AddCommentRequestBody {
   user: IUser;
   text: string;
@@ -37,7 +38,7 @@ export interface AddCommentRequestBody {
 
 export async function POST(
   request: Request,
-  { params }: { params: { post_id: string } }
+  { params }: { params: { post_id: string } } // Explicitly typing params
 ) {
   await connectDB();
   const { user, text }: AddCommentRequestBody = await request.json();
