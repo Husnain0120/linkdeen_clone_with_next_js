@@ -160,9 +160,10 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
           Repost
         </Button>
 
-        <Button className="postButton" variant={"ghost"}>
-          <Send className="mr-1" />
-          Send
+        <Button className="postButton  " variant={"ghost"}>
+          <Send className="mr-1 hidden sm:block" />
+
+          <span className="hidden sm:block"> Send</span>
         </Button>
       </div>
       {isCommentsOpen && (
