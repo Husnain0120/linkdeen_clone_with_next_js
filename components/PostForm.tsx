@@ -120,7 +120,7 @@ export default function PostForm() {
             <Button
               type="submit"
               disabled={!postText.trim()}
-              className="rounded-full  flex items-center justify-center bg-blue-00" // Same height and width as the image upload button
+              className="rounded-full  flex items-center justify-center bg-blue-700" // Same height and width as the image upload button
             >
               Post
             </Button>
