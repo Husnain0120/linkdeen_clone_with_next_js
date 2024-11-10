@@ -64,15 +64,14 @@ export default function Header() {
           </Avatar>
         </SignedOut>
 
-        <div className=" md:flex flex-1">
-          <form className="flex items-center space-x-1 bg-gray-200 p-2 rounded-full flex-1 ">
-            <Search className="h-4 text-gray-600" />
-            <input
-              type="text"
-              placeholder="Search"
-              className="h-5 bg-transparent flex-1 outline-none"
-            />
-          </form>
+        <div className="flex flex-1 items-center gap-2 rounded-full bg-secondary/80 px-4 py-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            disabled
+            type="search"
+            placeholder="Search"
+            className="h-5 border-0 bg-transparent p-0 text-sm focus-visible:ring-0"
+          />
         </div>
 
         <Link href={"/addpost"}>
