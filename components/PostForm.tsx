@@ -57,7 +57,7 @@ export default function PostForm() {
   };
 
   return (
-    <div className="rounded-lg  bg-background md:p-4 p-4">
+    <div className="rounded-lg bg-background md:p-4 px-2 pt-3">
       <form
         ref={ref}
         action={(formData) => {
@@ -70,30 +70,64 @@ export default function PostForm() {
         }}
         className="flex flex-col h-[calc(100vh-4rem)] md:h-auto md:space-y-4"
       >
-        <div className="flex items-center gap-2">
-          <Link href={"/"} className="pr-4">
-            <Undo2 />
-          </Link>
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={imageUrl} />
-            <AvatarFallback>
-              {firstName?.charAt(0)}
-              {lastName?.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
+        {/* Header with User Image, Undo, and Audience Select */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Left side: Undo and User Image */}
+          <div className="flex items-center gap-2">
+            <Link href={"/"} className="pr-4">
+              <Undo2 />
+            </Link>
 
-          <Select defaultValue="anyone" disabled>
-            <SelectTrigger className="w-[100px] border-0 bg-transparent p-0 text-sm font-medium hover:bg-transparent focus:ring-0">
-              <SelectValue placeholder="Select audience" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="anyone">Anyone</SelectItem>
-              <SelectItem value="connections">Connections</SelectItem>
-              <SelectItem value="group">Group Members</SelectItem>
-            </SelectContent>
-          </Select>
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={imageUrl} />
+              <AvatarFallback>
+                {firstName?.charAt(0)}
+                {lastName?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+
+            <Select defaultValue="anyone" disabled>
+              <SelectTrigger className="w-[100px] border-0 bg-transparent p-0 text-sm font-medium hover:bg-transparent focus:ring-0">
+                <SelectValue placeholder="Select audience" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="anyone">Anyone</SelectItem>
+                <SelectItem value="connections">Connections</SelectItem>
+                <SelectItem value="group">Group Members</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Right side: Post Button and Image Upload Icon */}
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              name="image"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              className="h-10 w-10" // Adjust size of the icon button
+            >
+              <ImageIcon className="h-5 w-5" />
+            </Button>
+            <Button
+              type="submit"
+              disabled={!postText.trim()}
+              className="rounded-full  flex items-center justify-center bg-blue-00" // Same height and width as the image upload button
+            >
+              Post
+            </Button>
+          </div>
         </div>
 
+        {/* Textarea and Image Preview */}
         <div className="flex-grow space-y-4 overflow-y-auto p-4 md:p-0">
           <textarea
             name="postInput"
@@ -123,33 +157,9 @@ export default function PostForm() {
           )}
         </div>
 
+        {/* Footer with Button Spacing */}
         <div className="flex items-center justify-between border-t p-4 md:pt-4 md:p-0">
-          <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              name="image"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <ImageIcon className="h-5 w-5" />
-            </Button>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={!postText.trim()}
-            className="rounded-full px-6"
-          >
-            Post
-          </Button>
+          {/* Optional footer content can go here */}
         </div>
       </form>
     </div>
