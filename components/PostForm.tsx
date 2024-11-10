@@ -1,134 +1,157 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useUser } from "@clerk/nextjs";
-import { Button } from "./ui/button";
-import { ImageIcon, XIcon } from "lucide-react";
 import { useRef, useState } from "react";
-import createPostAction from "@/actions/createPostAction";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { ImageIcon, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
-// import ReloadPostsButton from "./ReloadPostsButton";
 
-function PostForm() {
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import createPostAction from "@/actions/createPostAction";
+import Link from "next/link";
+
+export default function PostForm() {
   const ref = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [postText, setPostText] = useState("");
   const { user } = useUser();
+  const router = useRouter();
+
   const firstName = user?.firstName;
   const lastName = user?.lastName;
   const imageUrl = user?.imageUrl;
 
-  const handelImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setPreview(URL.createObjectURL(file));
     }
   };
 
-  const handelPostAction = async (formData: FormData) => {
-    const formDataCopy = formData;
-    ref.current?.reset();
-
-    const text = formDataCopy.get("postInput") as string;
+  const handlePostAction = async (formData: FormData) => {
+    const text = formData.get("postInput") as string;
 
     if (!text.trim()) {
-      throw new Error("Yout must provide a post input");
+      throw new Error("You must provide a post input");
     }
 
-    setPreview(null);
-
     try {
-      await createPostAction(formDataCopy);
+      await createPostAction(formData);
+      ref.current?.reset();
+      setPreview(null);
+      setPostText("");
+      router.push("/");
     } catch (error) {
-      console.log("Error creating post", error);
+      console.error("Error creating post", error);
+      throw error; // Re-throw the error to be caught by the toast
     }
   };
 
   return (
-    <div className="mb-2">
+    <div className="rounded-lg  bg-background md:p-4 p-4">
       <form
         ref={ref}
         action={(formData) => {
-          //Handel form submition with server action
-          const promise = handelPostAction(formData);
-
-          //tost notification
+          const promise = handlePostAction(formData);
           toast.promise(promise, {
-            loading: "Createing Post",
+            loading: "Creating post...",
             success: "Post created",
-            error: "Failed to create post",
+            error: (err) => `Failed to create post: ${err.message}`,
           });
         }}
-        className="p-3 bg-white rounded-lg border"
+        className="flex flex-col h-[calc(100vh-4rem)] md:h-auto md:space-y-4"
       >
-        <div className=" flex items-center space-x-2">
-          <Avatar>
+        <div className="flex items-center gap-2">
+          <Link href={"/"} className="pr-4">
+            <Undo2 />
+          </Link>
+          <Avatar className="h-10 w-10">
             <AvatarImage src={imageUrl} />
-
             <AvatarFallback>
               {firstName?.charAt(0)}
               {lastName?.charAt(0)}
             </AvatarFallback>
           </Avatar>
 
-          <input
-            type="text"
-            name="postInput"
-            placeholder="Start writing a post..."
-            className="flex-1 outline-none rounded-full py-3 px-4 border"
-          />
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            name="image"
-            accept="image/*"
-            hidden
-            onChange={handelImageChange}
-          />
-          <button type="submit" hidden>
-            Post
-          </button>
+          <Select defaultValue="anyone" disabled>
+            <SelectTrigger className="w-[100px] border-0 bg-transparent p-0 text-sm font-medium hover:bg-transparent focus:ring-0">
+              <SelectValue placeholder="Select audience" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="anyone">Anyone</SelectItem>
+              <SelectItem value="connections">Connections</SelectItem>
+              <SelectItem value="group">Group Members</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        {/* Previwe conditional check */}
-        {preview && (
-          <div className="mt-3">
-            <img
-              src={preview}
-              alt="preview"
-              className="w-full rounded-lg object-cover"
-            />
-          </div>
-        )}
 
-        <div className="flex justify-end mt-2 space-x-2">
-          {/* <ReloadPostsButton /> */}
-          <Button
-            type="button"
-            variant={preview ? "secondary" : "outline"}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <ImageIcon className="mr-2" size={16} color="currentColor" />
-            {preview ? "Change" : "Add"} Image
-          </Button>
+        <div className="flex-grow space-y-4 overflow-y-auto p-4 md:p-0">
+          <textarea
+            name="postInput"
+            value={postText}
+            onChange={(e) => setPostText(e.target.value)}
+            placeholder="Share your thoughts..."
+            className="min-h-[100px] w-full resize-none bg-transparent text-lg outline-none"
+          />
 
-          {/* add a remove preview button  */}
           {preview && (
-            <Button
-              variant={"outline"}
-              type="button"
-              onClick={() => setPreview(null)}
-            >
-              <XIcon className="mr-2" size={16} color="currentColor" />
-              Remove image
-            </Button>
+            <div className="relative">
+              <img
+                src={preview}
+                alt="Preview"
+                className="rounded-lg object-cover"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                className="absolute right-2 top-2"
+                onClick={() => setPreview(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </div>
-      </form>
 
-      <hr className="mt-2 border-gray-300" />
+        <div className="flex items-center justify-between border-t p-4 md:pt-4 md:p-0">
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              name="image"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <ImageIcon className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <Button
+            type="submit"
+            disabled={!postText.trim()}
+            className="rounded-full px-6"
+          >
+            Post
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
-
-export default PostForm;

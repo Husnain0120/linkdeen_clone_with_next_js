@@ -33,7 +33,7 @@ export async function generateSASToken() {
   permissions.read = true;
 
   const expiryDate = new Date();
-  expiryDate.setMinutes(expiryDate.getMinutes() + 30);
+  expiryDate.setHours(expiryDate.getHours() + 12); // Valid for 12 hours
 
   const sasToken = generateBlobSASQueryParameters(
     {

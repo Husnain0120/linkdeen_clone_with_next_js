@@ -26,9 +26,11 @@ export default async function Home() {
 
       <section className="col-span-full md:col-span-6 xl:col-span-4 xl:max-w-xl mx-auto w-full">
         {/* PostForm */}
-        <SignedIn>
-          <PostForm />
-        </SignedIn>
+        <div className=" hidden md:block mb-10">
+          <SignedIn>
+            <PostForm />
+          </SignedIn>
+        </div>
 
         {/* Post Feed */}
         <PostFeed posts={posts} />

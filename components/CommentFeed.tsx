@@ -24,7 +24,7 @@ const CommentFeed = ({ post }: { post: IPostDocument }) => {
             </AvatarFallback>
           </Avatar>
 
-          <div className="bg-gray-50 px-4 py-2 rounded-md w-full sm:w-auto md:min-w-[300px]">
+          <div className="bg-white  px-4 py-2 rounded-md w-full sm:w-auto md:min-w-[300px]">
             <div className=" flex justify-between">
               <div className="font-semibold">
                 <div className=" flex justify-betweens items-center text-sm  ">

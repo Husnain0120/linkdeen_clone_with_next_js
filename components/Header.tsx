@@ -1,163 +1,216 @@
 "use client";
 
-import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
-import { UserButton } from "@clerk/nextjs";
-import { useState } from "react";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
 import {
   Briefcase,
   Home,
   MessageSquare,
-  SearchIcon,
+  MoreHorizontal,
+  Plus,
+  Search,
   Users,
-  X,
 } from "lucide-react";
-
 import Link from "next/link";
-import { Button } from "./ui/button";
-import { Logo } from "./logo";
+import { useState } from "react";
 
-const Header = () => {
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
+
+export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-
-  const toggleSearch = () => setIsSearchOpen(!isSearchOpen);
-  const toggleMobileNav = () => setIsMobileNavOpen(!isMobileNavOpen);
 
   return (
     <>
       <SignedOut>
-        <div className="  flex items-center justify-center bg-slate-100 text-yellow-700 py-1">
-          <p className="bg-gradient-to-r from-purple-600 via-purple-700 to-purple-900 px-4 py-1 rounded-lg text-yellow-200 shadow-lg shadow-purple-500/50 animate-pulse">
+        <div className="flex items-center justify-center bg-slate-100 py-1">
+          <p className="animate-pulse rounded-lg bg-gradient-to-r from-purple-600 via-purple-700 to-purple-900 px-4 py-1 text-yellow-200 shadow-lg shadow-purple-500/50">
             Beta Version
           </p>
         </div>
       </SignedOut>
-      <div className="flex items-center p-2 max-w-6xl mx-auto">
-        {/* Logo */}
-        <Link href="/" className="flex-shrink-0 pr-4">
-          <Logo />
-        </Link>
 
-        {/* Search Icon (Mobile) */}
-        <div className="flex-1 md:hidden">
-          <button
-            onClick={toggleSearch}
-            className="p-2 bg-gray-200 rounded-md flex items-center"
-          >
-            <SearchIcon className="h-5 w-5 text-gray-600" />
-          </button>
-        </div>
+      {/* Mobile Header */}
+      <div className="flex items-center gap-3 border-b bg-background p-2 md:hidden">
+        <SignedIn>
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "h-10 w-10",
+              },
+            }}
+          />
+        </SignedIn>
+        <SignedOut>
+          <Avatar className="h-10 w-10">
+            <AvatarImage src="/placeholder.svg" alt="Profile" />
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
+        </SignedOut>
 
-        {/* Search Bar (Desktop) */}
-        <div className="hidden md:flex flex-1">
-          <form className="flex items-center space-x-1 bg-gray-200 p-2 rounded-md flex-1 max-w-96">
-            <SearchIcon className="h-4 text-gray-600" />
+        <div className=" md:flex flex-1">
+          <form className="flex items-center space-x-1 bg-gray-200 p-2 rounded-full flex-1 ">
+            <Search className="h-4 text-gray-600" />
             <input
               type="text"
               placeholder="Search"
-              className="bg-transparent flex-1 outline-none"
+              className="h-5 bg-transparent flex-1 outline-none"
             />
           </form>
         </div>
 
-        {/* Navigation Links (Desktop) */}
-        <div className="hidden md:flex items-center space-x-4 px-6">
-          <Link href={"/"} className="icon">
-            <Home className="h-5" />
-            <p>Home</p>
-          </Link>
+        <Link href={"/addpost"}>
+          <Button variant="ghost" size="icon" className="shrink-0">
+            <span className="bg-gray-600 p-[1px] rounded-sm font-semibold">
+              <Plus className="h-6 w-6  text-white " />
+            </span>
 
-          <Link href={"/network"} className="icon hidden lg:flex">
-            <Users className="h-5" />
-            <p>Network</p>
-          </Link>
+            <span className="sr-only">Create new post</span>
+          </Button>
+        </Link>
 
-          <Link href={"/jobs"} className="icon hidden lg:flex">
-            <Briefcase className="h-5" />
-            <p>Jobs</p>
-          </Link>
+        <Drawer>
+          <DrawerTrigger asChild>
+            <Button variant="ghost" size="icon" className="shrink-0">
+              <MoreHorizontal className="h-6 w-6" />
+              <span className="sr-only">More options</span>
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Menu</DrawerTitle>
+              <DrawerDescription>
+                Access additional options and navigation
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Link
+                  href="/"
+                  className="flex flex-col items-center justify-center"
+                >
+                  <Home className="h-6 w-6 mb-1" />
+                  <span className="text-sm">Home</span>
+                </Link>
+                <Link
+                  href="#"
+                  className="flex flex-col items-center justify-center"
+                >
+                  <Users className="h-6 w-6 mb-1" />
+                  <span className="text-sm">Network</span>
+                </Link>
+                <Link
+                  href="#"
+                  className="flex flex-col items-center justify-center"
+                >
+                  <Briefcase className="h-6 w-6 mb-1" />
+                  <span className="text-sm">Jobs</span>
+                </Link>
+                <Link
+                  href="#"
+                  className="flex flex-col items-center justify-center"
+                >
+                  <MessageSquare className="h-6 w-6 mb-1" />
+                  <span className="text-sm">Messaging</span>
+                </Link>
+              </div>
+            </div>
+            <DrawerFooter>
+              <SignedOut>
+                <Button asChild variant="secondary" className="w-full">
+                  <SignInButton />
+                </Button>
+                <Button asChild className="w-full">
+                  <SignUpButton />
+                </Button>
+              </SignedOut>
+              <DrawerClose asChild>
+                <Button variant="outline">Close</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      </div>
 
-          <Link href={"/messaging"} className="icon">
-            <MessageSquare className="h-5" />
-            <p>Messaging</p>
-          </Link>
-        </div>
+      {/* Desktop Header */}
+      <div className="hidden items-center p-2 md:flex md:max-w-6xl md:mx-auto">
+        <Link href="/" className="flex-shrink-0 pr-4">
+          <span className="font-bold">Logo</span>
+          <span className="sr-only">Home</span>
+        </Link>
 
-        {/* User Button & Auth Buttons */}
-        <div className="flex items-center space-x-2 md:space-x-4">
+        <form className="flex flex-1 max-w-96">
+          <div className="flex w-full items-center gap-2 rounded-md bg-muted px-3 py-2">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search"
+              className="h-8 border-0 bg-transparent p-0 focus-visible:ring-0"
+            />
+          </div>
+        </form>
+
+        <nav className="flex items-center space-x-4 px-6">
+          <Link
+            href="/"
+            className="flex flex-col items-center p-2 text-sm hover:text-primary"
+          >
+            <Home className="h-5 w-5 mb-1" />
+            <span>Home</span>
+          </Link>
+          <Link
+            href="#"
+            className="flex flex-col items-center p-2 text-sm hover:text-primary lg:flex"
+          >
+            <Users className="h-5 w-5 mb-1" />
+            <span>Network</span>
+          </Link>
+          <Link
+            href="#"
+            className="flex flex-col items-center p-2 text-sm hover:text-primary lg:flex"
+          >
+            <Briefcase className="h-5 w-5 mb-1" />
+            <span>Jobs</span>
+          </Link>
+          <Link
+            href="#"
+            className="flex flex-col items-center p-2 text-sm hover:text-primary"
+          >
+            <MessageSquare className="h-5 w-5 mb-1" />
+            <span>Messaging</span>
+          </Link>
+        </nav>
+
+        <div className="flex items-center gap-2">
           <SignedIn>
-            <UserButton />
+            <UserButton afterSignOutUrl="/" />
           </SignedIn>
-
           <SignedOut>
-            <Button asChild variant="secondary" className="text-sm px-2 py-1">
+            <Button asChild variant="secondary" size="sm">
               <SignInButton />
             </Button>
-            <Button asChild variant="destructive" className="text-sm px-2 py-1">
+            <Button asChild size="sm">
               <SignUpButton />
             </Button>
           </SignedOut>
-
-          {/* Mobile Navigation Toggle */}
-          <button className="md:hidden" onClick={toggleMobileNav}>
-            <Home className="h-6 w-6" />
-          </button>
         </div>
-
-        {/* Mobile Search Modal */}
-        {isSearchOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white p-4 rounded-lg w-full max-w-md">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Search</h2>
-                <button onClick={toggleSearch}>
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-              <form className="mt-4">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="w-full p-2 border rounded-md"
-                />
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Mobile Navigation Menu */}
-        {isMobileNavOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
-            <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
-              <Link href={"/"} className="icon">
-                <Home className="h-5" />
-                <p>Home</p>
-              </Link>
-
-              <Link href={"/network"} className="icon">
-                <Users className="h-5" />
-                <p>Network</p>
-              </Link>
-
-              <Link href={"/jobs"} className="icon">
-                <Briefcase className="h-5" />
-                <p>Jobs</p>
-              </Link>
-
-              <Link href={"/messaging"} className="icon">
-                <MessageSquare className="h-5" />
-                <p>Messaging</p>
-              </Link>
-
-              <button onClick={toggleMobileNav} className="text-red-500">
-                Close Menu
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );
-};
-
-export default Header;
+}
