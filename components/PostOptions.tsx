@@ -1,7 +1,7 @@
 "use client";
 
 import { IPostDocument } from "@/mongodb/models/post.models";
-import { SignedIn, useUser } from "@clerk/nextjs";
+import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { MessageCircle, Repeat2, Send, ThumbsUpIcon } from "lucide-react";
@@ -169,6 +169,11 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
               <SignedIn>
                 <CommentForm postId={post._id.toString()} />
               </SignedIn>
+              <SignedOut>
+                <p className="text-center text-sm text-gray-600 font-medium">
+                  Please Login/Signup to Comment
+                </p>
+              </SignedOut>
             </div>
           </DrawerContent>
         </Drawer>
@@ -178,7 +183,7 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
           Repost
         </Button>
 
-        <Button className="postButton  " variant={"ghost"}>
+        <Button className="postButton" variant={"ghost"}>
           <Send className="mr-1 hidden sm:block" />
           <span className="hidden sm:block"> Send</span>
         </Button>
