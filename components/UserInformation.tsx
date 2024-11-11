@@ -1,10 +1,11 @@
+// components/UserInformation.tsx
 import { currentUser } from "@clerk/nextjs/server";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import React from "react";
 import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Button } from "./ui/button";
 import { IPostDocument } from "@/mongodb/models/post.models";
+import UserRadialChart from "@/components/RadialChart_User";
 
 const UserInformation = async ({ posts }: { posts: IPostDocument[] }) => {
   const user = await currentUser();
@@ -14,10 +15,12 @@ const UserInformation = async ({ posts }: { posts: IPostDocument[] }) => {
   const imageUrl = user?.imageUrl;
 
   const userPosts = posts?.filter((post) => post.user.userId === user?.id);
-
   const userComments = posts.flatMap((post) =>
     post?.comments?.filter((comment) => comment.user.userId === user?.id || [])
   );
+
+  const postsCount = userPosts.length;
+  const commentsCount = userComments.length;
 
   return (
     <div className="flex flex-col justify-center items-center bg-white mr-6 rounded-lg border py-4">
@@ -74,13 +77,16 @@ const UserInformation = async ({ posts }: { posts: IPostDocument[] }) => {
 
       <div className="flex justify-between w-full px-4 text-sm">
         <p className="font-semibold text-gray-400">Posts</p>
-        <p className="text-blue-400">{userPosts.length}</p>
+        <p className="text-blue-400">{postsCount}</p>
       </div>
 
       <div className="flex justify-between w-full px-4 text-sm">
         <p className="font-semibold text-gray-400">Comments</p>
-        <p className="text-blue-400">{userComments.length}</p>
+        <p className="text-blue-400">{commentsCount}</p>
       </div>
+
+      {/* Display the radial chart with posts and comments data */}
+      <UserRadialChart postsCount={postsCount} commentsCount={commentsCount} />
     </div>
   );
 };

@@ -6,8 +6,8 @@ import connectDB from "@/mongodb/db";
 import { Post } from "@/mongodb/models/post.models";
 import { SignedIn } from "@clerk/nextjs";
 import ReloadPostsButton from "@/components/ReloadPostsButton"; // Import the client component
-import NetworkStatus from "@/components/NetworkStatus";
-// import { toast } from "sonner";
+import NetworkStatus from "@/components/NetworkStatus"; // Ensure NetworkStatus uses Sonner for notifications
+import { toast } from "sonner"; // Import Sonner's toast for manual control if needed
 
 export const revalidate = 0;
 
@@ -26,9 +26,11 @@ export default async function Home() {
       </section>
 
       <section className="col-span-full md:col-span-6 xl:col-span-4 xl:max-w-xl mx-auto w-full">
+        {/* NetworkStatus: Sonner will handle notifications */}
         <NetworkStatus />
+
         {/* PostForm */}
-        <div className=" hidden md:block mb-10">
+        <div className="hidden md:block mb-10">
           <SignedIn>
             <PostForm />
           </SignedIn>
