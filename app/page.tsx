@@ -6,6 +6,7 @@ import connectDB from "@/mongodb/db";
 import { Post } from "@/mongodb/models/post.models";
 import { SignedIn } from "@clerk/nextjs";
 import ReloadPostsButton from "@/components/ReloadPostsButton"; // Import the client component
+import NetworkStatus from "@/components/NetworkStatus";
 // import { toast } from "sonner";
 
 export const revalidate = 0;
@@ -25,6 +26,7 @@ export default async function Home() {
       </section>
 
       <section className="col-span-full md:col-span-6 xl:col-span-4 xl:max-w-xl mx-auto w-full">
+        <NetworkStatus />
         {/* PostForm */}
         <div className=" hidden md:block mb-10">
           <SignedIn>
