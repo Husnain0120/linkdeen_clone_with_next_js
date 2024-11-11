@@ -12,19 +12,20 @@ import { UnlikePostRequestBody } from "@/app/api/posts/[post_id]/unlike/route";
 import CommentFeed from "./CommentFeed";
 import CommentForm from "./CommentForm";
 import { toast } from "sonner";
+import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from "./ui/drawer"; // Drawer imports
 import { useRouter } from "next/navigation";
+import { DialogTitle } from "@radix-ui/react-dialog"; // Import DialogTitle for accessibility
 
 const PostOptions = ({ post }: { post: IPostDocument }) => {
-  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false); // Drawer toggle state
   const { user } = useUser();
   const [liked, setLiked] = useState(false);
   const router = useRouter();
-  // Ensure likes is an array of strings
+
   const [likes, setLikes] = useState<string[]>(
     Array.isArray(post.likes) ? post.likes : post.likes ? [post.likes] : [] // Normalize post.likes to always be an array
   );
 
-  // Check if the current user is the author of the post
   const isAuthor = user?.id === post.user.userId;
 
   useEffect(() => {
@@ -35,25 +36,23 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
 
   const likeOrUnlikePost = async () => {
     if (!user?.id) {
-      // If user is not authenticated, show a toast and exit the function
       toast.error("First login/signup to like post");
       return;
     }
 
-    // Store the original like status and likes list to handle errors and revert if needed
     const originalLiked = liked;
     const originalLikes = likes;
 
     const newLikes = liked
-      ? likes.filter((like) => like !== user.id) // Remove user from likes if unliking
-      : [...likes, user.id]; // Add user to likes if liking
+      ? likes.filter((like) => like !== user.id)
+      : [...likes, user.id];
 
     const body: LikePostRequestBody | UnlikePostRequestBody = {
       userId: user.id,
     };
 
-    setLiked(!liked); // Toggle liked state
-    setLikes(newLikes); // Update likes state
+    setLiked(!liked);
+    setLikes(newLikes);
 
     const response = await fetch(
       `/api/posts/${post._id}/${liked ? "unlike" : "like"}`,
@@ -67,10 +66,8 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
     );
 
     if (!response.ok) {
-      // Revert likes if the request fails
       setLiked(originalLiked);
       setLikes(originalLikes);
-
       throw new Error("Failed to like or unlike post");
     }
 
@@ -79,18 +76,11 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
     if (!fetchLikesResponse.ok) {
       setLiked(originalLiked);
       setLikes(originalLikes);
-
       throw new Error("Failed to fetch likes");
     }
 
     const newLikeData = await fetchLikesResponse.json();
-
     setLikes(newLikeData);
-
-    // If the post is authored by the logged-in user, show a success toast directly
-    // if (isAuthor) {
-    //   toast.success("Post liked successfully");
-    // }
   };
 
   return (
@@ -130,9 +120,6 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
                   : "Post liked successfully",
                 error: liked ? "Failed to unlike post" : "Failed to like post",
               });
-            // {
-            //   !isAuthor && router.replace("/sign-up");
-            // }
           }}
         >
           <ThumbsUpIcon
@@ -141,19 +128,50 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
           Like
         </Button>
 
-        <Button
-          variant={"ghost"}
-          className="postButton"
-          onClick={() => setIsCommentsOpen(!isCommentsOpen)}
-        >
-          <MessageCircle
-            className={cn(
-              "mr-1",
-              isCommentsOpen && "text-gray-600 fill-gray-600"
-            )}
-          />
-          Comment
-        </Button>
+        <Drawer open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
+          <DrawerTrigger asChild>
+            <Button variant={"ghost"} className="postButton">
+              <MessageCircle
+                className={cn(
+                  "mr-1",
+                  isCommentsOpen && "text-gray-600  fill-gray-600"
+                )}
+              />
+              Comment
+            </Button>
+          </DrawerTrigger>
+
+          <DrawerContent className="p-4 h-[75vh] flex flex-col fixed bottom-0 left-0 right-0 max-h-[75vh] overflow-hidden">
+            <div className="flex justify-between items-center mb-4">
+              {/* Centered title and added DialogTitle for accessibility */}
+              <DialogTitle asChild>
+                <h2 className="text-lg font-bold text-orange-600 text-center flex-1">
+                  Comments
+                </h2>
+              </DialogTitle>
+              <DrawerClose asChild>
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsCommentsOpen(false)}
+                >
+                  Close
+                </Button>
+              </DrawerClose>
+            </div>
+
+            {/* Scrollable comment feed */}
+            <div className="flex-1 overflow-y-auto mb-4">
+              <CommentFeed post={post} />
+            </div>
+
+            {/* Fixed comment form at the bottom */}
+            <div className="border-t pt-4">
+              <SignedIn>
+                <CommentForm postId={post._id.toString()} />
+              </SignedIn>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         <Button variant={"ghost"} className="postButton">
           <Repeat2 className="mr-1" />
@@ -162,19 +180,9 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
 
         <Button className="postButton  " variant={"ghost"}>
           <Send className="mr-1 hidden sm:block" />
-
           <span className="hidden sm:block"> Send</span>
         </Button>
       </div>
-      {isCommentsOpen && (
-        <div className="p-4">
-          <SignedIn>
-            <CommentForm postId={post._id.toString()} />
-          </SignedIn>
-
-          <CommentFeed post={post} />
-        </div>
-      )}
     </div>
   );
 };

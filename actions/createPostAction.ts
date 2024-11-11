@@ -22,7 +22,7 @@ export default async function createPostAction(formData: FormData) {
   let image_Url: string | undefined;
 
   if (!postInput) {
-    throw new Error("Post input is required");
+    return;
   }
 
   // Define user
@@ -74,9 +74,9 @@ export default async function createPostAction(formData: FormData) {
 
       // 2. Create post in the database with the image
       const body: AddPostRequestBody = {
-        user: userDB,
         text: postInput,
         imageUrl: image_Url, // Use the uploaded image URL
+        user: userDB,
       };
       await Post.create(body);
     } else {
