@@ -1,8 +1,8 @@
-import connectDB from "@/mongodb/db"; // Import MongoDB connection
-import { IpostBase, Post } from "@/mongodb/models/post.models"; // Import Post model
-import { IUser } from "@/types/user.type"; // Import user type
-import { auth, getAuth } from "@clerk/nextjs/server"; // Import Clerk's getAuth for authentication
-import { NextResponse, NextRequest } from "next/server"; // Import Next.js response and NextRequest types
+import connectDB from '@/mongodb/db'; // Import MongoDB connection
+import { IpostBase, Post } from '@/mongodb/models/post.models'; // Import Post model
+import { IUser } from '@/types/user.type'; // Import user type
+import { getAuth } from '@clerk/nextjs/server'; // Import Clerk's getAuth for authentication
+import { NextRequest, NextResponse } from 'next/server'; // Import Next.js response and NextRequest types
 
 // Interface for request body structure when adding a post
 export interface AddPostRequestBody {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
   // If user is not authenticated, return a 401 Unauthorized response
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -47,11 +47,11 @@ export async function POST(request: NextRequest) {
     const post = await Post.create(postData);
 
     // Return the created post as a response
-    return NextResponse.json({ message: "Post created successfully", post });
+    return NextResponse.json({ message: 'Post created successfully', post });
   } catch (error) {
     // Handle any errors and return a 500 Internal Server Error response
     return NextResponse.json(
-      { error: "An error occurred while creating the post" },
+      { error: 'An error occurred while creating the post' },
       { status: 500 }
     );
   }
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     // Handle any errors and return a 500 Internal Server Error response
     return NextResponse.json(
-      { error: "An error occurred while fetching posts" },
+      { error: 'An error occurred while fetching posts' },
       { status: 500 }
     );
   }

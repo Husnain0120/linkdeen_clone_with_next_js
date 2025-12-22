@@ -1,6 +1,6 @@
-import { IUser } from "@/types/user.type";
-import mongoose, { Schema, model, models, Document, Model } from "mongoose";
-import { Comment, IComment, ICommentBase } from "./comment.models";
+import { IUser } from '@/types/user.type';
+import mongoose, { Document, Model, Schema, models } from 'mongoose';
+import { Comment, IComment, ICommentBase } from './comment.models';
 
 // Post base interface, defining essential fields for a post
 export interface IpostBase {
@@ -50,7 +50,7 @@ const postSchema = new Schema<IPostDocument>(
 
     text: { type: String, required: true }, // Content of the post
     imageUrl: { type: String }, // Optional image attached to the post
-    comments: { type: [Schema.Types.ObjectId], ref: "Comment", default: [] }, // Array of comments (references to Comment model)
+    comments: { type: [Schema.Types.ObjectId], ref: 'Comment', default: [] }, // Array of comments (references to Comment model)
     likes: { type: [String] }, // Array of user IDs who liked the post
   },
   {
@@ -64,7 +64,7 @@ postSchema.methods.likePost = async function (userId: string) {
     // Adds the userId to the likes array (without duplicates)
     await this.updateOne({ $addToSet: { likes: userId } });
   } catch (error) {
-    console.log("Failed to like post", error);
+    console.log('Failed to like post', error);
   }
 };
 
@@ -74,7 +74,7 @@ postSchema.methods.unlikePost = async function (userId: string) {
     // Removes the userId from the likes array
     await this.updateOne({ $pull: { likes: userId } });
   } catch (error) {
-    console.log("Failed to unlike post", error);
+    console.log('Failed to unlike post', error);
   }
 };
 
@@ -82,9 +82,9 @@ postSchema.methods.unlikePost = async function (userId: string) {
 postSchema.methods.removePost = async function () {
   try {
     // Deletes the post document from the collection
-    await this.model("Post").deleteOne({ _id: this._id });
+    await this.model('Post').deleteOne({ _id: this._id });
   } catch (error) {
-    console.log("Failed to remove post", error);
+    console.log('Failed to remove post', error);
   }
 };
 
@@ -96,7 +96,7 @@ postSchema.methods.commentOnPost = async function (commentToAdd: ICommentBase) {
     this.comments.push(comment._id); // Adding the comment ID to the post
     await this.save(); // Saving the updated post with the new comment
   } catch (error) {
-    console.log("Error commenting on post", error);
+    console.log('Error commenting on post', error);
   }
 };
 
@@ -105,13 +105,13 @@ postSchema.methods.getAllComments = async function () {
   try {
     // Populates the comments field with the actual comment documents and sorts them by creation date (newest first)
     await this.populate({
-      path: "comments",
+      path: 'comments',
       option: { sort: { createdAt: -1 } }, // Sorting comments by newest first
     });
 
     return this.comments; // Returns the populated comments
   } catch (error) {
-    console.log("Error when getting all comments", error);
+    console.log('Error when getting all comments', error);
   }
 };
 
@@ -122,7 +122,7 @@ postSchema.statics.getAllPost = async function () {
     const posts = await this.find()
       .sort({ createdAt: -1 })
       .populate({
-        path: "comments", // Populating the comments for each post
+        path: 'comments', // Populating the comments for each post
         options: { sort: { createdAt: -1 } }, // Sorting comments by newest first
       })
       .lean(); // Use lean for faster read-only operations (returns plain JS objects)
@@ -132,22 +132,22 @@ postSchema.statics.getAllPost = async function () {
       (
         post: { _id: mongoose.Types.ObjectId; comments: IComment[] } & Omit<
           IPost,
-          "_id"
+          '_id'
         >
       ) => ({
         ...post,
         _id: post._id.toString(), // Converting the post _id to string
-        comments: post.comments?.map((comment) => ({
+        comments: post.comments?.map(comment => ({
           ...comment,
           _id: (comment._id as mongoose.Types.ObjectId).toString(), // Converting each comment's _id to string
         })),
       })
     );
   } catch (error) {
-    console.log("Error when getting all posts", error);
+    console.log('Error when getting all posts', error);
   }
 };
 
 export const Post =
   (models.Post as IPostModel) ||
-  mongoose.model<IPostDocument, IPostModel>("Post", postSchema);
+  mongoose.model<IPostDocument, IPostModel>('Post', postSchema);
