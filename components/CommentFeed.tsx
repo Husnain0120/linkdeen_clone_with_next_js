@@ -1,64 +1,74 @@
-"use client";
+'use client';
 
-import { IPostDocument } from "@/mongodb/models/post.models";
-import { useUser } from "@clerk/nextjs";
-import React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { comment } from "postcss";
-import ReactTimeago from "react-timeago";
-import { Badge } from "./ui/badge";
-import VerifiedBadge from "./instagram-verified-badge";
+import { IPostDocument } from '@/mongodb/models/post.models';
+import ReactTimeago from 'react-timeago';
+import VerifiedBadge from './instagram-verified-badge';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 const CommentFeed = ({ post }: { post: IPostDocument }) => {
-  const { user } = useUser();
-  const isAuthor = user?.id === post.user.userId;
   return (
-    <div className="space-y-2 mt-3">
-      {post.comments?.map((comment) => (
-        <div key={String(comment._id)} className="flex space-x-1">
-          <Avatar>
-            <AvatarImage src={comment.user.userImage} />
-            <AvatarFallback>
-              {comment.user.firstName.charAt(0)}
-              {comment.user.lastName?.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
+    <div className="divide-y divide-gray-100">
+      {post.comments?.map(comment => {
+        const isPostAuthor = comment.user.userId === post.user.userId;
+        const fullName = [comment.user.firstName, comment.user.lastName]
+          .filter(Boolean)
+          .join(' ');
 
-          <div className="bg-white  px-4 py-2 rounded-md w-full sm:w-auto md:min-w-[300px]">
-            <div className=" flex justify-between">
-              <div className="font-semibold">
-                <div className=" flex justify-betweens items-center text-sm  ">
-                  {comment.user.firstName}
-                  <VerifiedBadge
-                    className="md:ml-2  md:mr-2 ml-[2px] "
-                    size={13}
-                  />
-                </div>
-                {/* <Badge
-                  className={`ml-2 inline-block px-2 py-1 rounded-full text-xs ${
-                    isAuthor
-                      ? "bg-green-500 text-white mx-1"
-                      : "bg-gray-300 text-gray-700"
-                  }`}
-                >
-                  {isAuthor && "Author"}
-                </Badge> */}
-                <p className=" text-xs text-gray-400">
-                  @{comment.user.firstName}
-                  {comment.user.lastName}-
-                  {comment.user.userId.toString().slice(-4)}
-                </p>
+        return (
+          <div key={String(comment._id)} className="flex gap-2 py-3 first:pt-0">
+            {/* Avatar */}
+            <Avatar className="h-8 w-8 shrink-0">
+              <AvatarImage src={comment.user.userImage} />
+              <AvatarFallback className="text-xs">
+                {comment.user.firstName?.charAt(0)}
+                {comment.user.lastName?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              {/* Name row */}
+              <div className="flex items-center flex-wrap gap-x-1 gap-y-0">
+                <span className="text-sm font-semibold text-gray-900">
+                  {fullName}
+                </span>
+                <VerifiedBadge size={12} className="shrink-0" />
+                {isPostAuthor && (
+                  <span className="text-[10px] font-medium text-gray-600 bg-gray-100 rounded px-1.5 py-0.5 ml-1">
+                    Author
+                  </span>
+                )}
+              </div>
+
+              {/* Handle */}
+              <p className="text-xs text-gray-500 truncate">
+                @{comment.user.firstName}
+                {comment.user.lastName}-
+                {comment.user.userId.toString().slice(-4)}
+              </p>
+
+              {/* Comment text */}
+              <p className="mt-1 text-sm text-gray-800 break-words whitespace-pre-line">
+                {comment.text.charAt(0).toUpperCase() + comment.text.slice(1)}
+              </p>
+
+              {/* Actions row */}
+              <div className="flex items-center gap-3 mt-1.5">
+                <button className="text-xs font-semibold text-gray-500 hover:text-gray-800 hover:underline transition-colors">
+                  Like
+                </button>
+                <button className="text-xs font-semibold text-gray-500 hover:text-gray-800 hover:underline transition-colors">
+                  Reply
+                </button>
+                <span className="text-xs text-gray-400">·</span>
+                <span className="text-xs text-gray-500">
+                  <ReactTimeago date={new Date(comment.createdAt)} />
+                </span>
               </div>
             </div>
-            <p className="mt-3 text-sm bg-white p-2 rounded-full">
-              {comment.text.charAt(0).toUpperCase() + comment.text.slice(1)}
-            </p>
-            <p className="text-[10px] my-1  text-gray-900">
-              <ReactTimeago date={new Date(comment.createdAt)} />
-            </p>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

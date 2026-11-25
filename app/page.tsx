@@ -1,52 +1,52 @@
-import PostFeed from "@/components/PostFeed";
-import PostForm from "@/components/PostForm";
-import UserInformation from "@/components/UserInformation";
-import Widget from "@/components/widget";
-import connectDB from "@/mongodb/db";
-import { Post } from "@/mongodb/models/post.models";
-import { SignedIn } from "@clerk/nextjs";
-import ReloadPostsButton from "@/components/ReloadPostsButton"; // Import the client component
-import NetworkStatus from "@/components/NetworkStatus"; // Ensure NetworkStatus uses Sonner for notifications
-import { toast } from "sonner"; // Import Sonner's toast for manual control if needed
+import NetworkStatus from '@/components/NetworkStatus';
+import PostFeed from '@/components/PostFeed';
+import PostForm from '@/components/PostForm';
+import ReloadPostsButton from '@/components/ReloadPostsButton';
+import UserInformation from '@/components/UserInformation';
+import Widget from '@/components/widget';
+import connectDB from '@/mongodb/db';
+import { Post } from '@/mongodb/models/post.models';
+import { SignedIn } from '@clerk/nextjs';
 
 export const revalidate = 0;
 
 export default async function Home() {
   await connectDB();
-
   const posts = await Post.getAllPost();
 
   return (
-    <div className="grid grid-cols-8 mt-5 sm:px-5">
-      <section className="hidden md:inline md:col-span-2">
-        {/* UserInformation */}
-        <SignedIn>
-          <UserInformation posts={posts} />
-        </SignedIn>
-      </section>
-
-      <section className="col-span-full md:col-span-6 xl:col-span-4 xl:max-w-xl mx-auto w-full">
-        {/* NetworkStatus: Sonner will handle notifications */}
-        <NetworkStatus />
-
-        {/* PostForm */}
-        <div className="hidden md:block mb-10">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-6 pt-4 pb-12">
+      {/* ============ LEFT SIDEBAR — User Info ============ */}
+      <aside className="hidden md:block md:col-span-3">
+        <div className="sticky top-20 space-y-3">
           <SignedIn>
-            <PostForm />
+            <UserInformation posts={posts} />
           </SignedIn>
         </div>
+      </aside>
 
-        {/* Post Feed */}
+      {/* ============ CENTER — Feed ============ */}
+      <div className="col-span-1 md:col-span-9 lg:col-span-6 flex flex-col gap-3 min-w-0">
+        <NetworkStatus />
+
+        <SignedIn>
+          <div className="hidden md:block">
+            <PostForm />
+          </div>
+        </SignedIn>
+
+        {/* PostFeed ko internally bhi space chahiye — neeche note dekho */}
         <PostFeed posts={posts} />
 
-        {/* Reload Posts Button */}
         <ReloadPostsButton />
-      </section>
+      </div>
 
-      <section className="hidden xl:inline justify-center col-span-2">
-        {/* widget*/}
-        <Widget />
-      </section>
+      {/* ============ RIGHT SIDEBAR — Widget ============ */}
+      <aside className="hidden lg:block lg:col-span-3">
+        <div className="sticky top-20 space-y-3">
+          <Widget />
+        </div>
+      </aside>
     </div>
   );
 }

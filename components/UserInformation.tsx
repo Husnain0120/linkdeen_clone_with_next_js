@@ -1,94 +1,254 @@
 // components/UserInformation.tsx
-import { currentUser } from "@clerk/nextjs/server";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import React from "react";
-import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
-import { Button } from "./ui/button";
-import { IPostDocument } from "@/mongodb/models/post.models";
-import UserRadialChart from "@/components/RadialChart_User";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { IPostDocument } from '@/mongodb/models/post.models';
+import { SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
+import {
+  BarChart3,
+  Eye,
+  Flame,
+  Heart,
+  MessageSquare,
+  Search,
+  Users,
+} from 'lucide-react';
+import React from 'react';
+import { Button } from './ui/button';
 
+/* ---------- Helpers ---------- */
+function daysBetween(a: Date, b: Date) {
+  return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function formatNumber(n: number) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return n.toString();
+}
+
+/* ---------- Component ---------- */
 const UserInformation = async ({ posts }: { posts: IPostDocument[] }) => {
   const user = await currentUser();
 
-  const firstName = user?.firstName;
-  const lastName = user?.lastName;
+  const firstName = user?.firstName ?? '';
+  const lastName = user?.lastName ?? '';
   const imageUrl = user?.imageUrl;
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
 
-  const userPosts = posts?.filter((post) => post.user.userId === user?.id);
-  const userComments = posts.flatMap((post) =>
-    post?.comments?.filter((comment) => comment.user.userId === user?.id || [])
+  /* ----- Derived data ----- */
+  const userPosts = (posts ?? []).filter(p => p.user.userId === user?.id);
+  const userComments = (posts ?? []).flatMap(
+    p => p?.comments?.filter(c => c.user.userId === user?.id) ?? []
   );
 
   const postsCount = userPosts.length;
   const commentsCount = userComments.length;
 
+  const totalLikesReceived = userPosts.reduce((sum, p) => {
+    const likes = Array.isArray(p.likes) ? p.likes.length : p.likes ? 1 : 0;
+    return sum + likes;
+  }, 0);
+
+  const totalCommentsReceived = userPosts.reduce(
+    (sum, p) => sum + (p.comments?.length ?? 0),
+    0
+  );
+
+  const engagementRate =
+    postsCount > 0
+      ? Math.round(
+          ((totalLikesReceived + totalCommentsReceived) / postsCount) * 10
+        )
+      : 0;
+
+  // Post impressions ≈ total likes + comments on user's posts (LinkedIn formula approximation)
+  const postImpressions = totalLikesReceived + totalCommentsReceived;
+
+  // Fake "search appearances" derived from activity (LinkedIn shows real data)
+  const searchAppearances = postsCount * 12 + commentsCount * 4;
+
+  // Activity streak
+  let streak = 0;
+  if (userPosts.length > 0) {
+    const sorted = [...userPosts]
+      .map(p => new Date(p.createdAt))
+      .sort((a, b) => b.getTime() - a.getTime());
+    const today = new Date();
+    let ref = today;
+    for (const d of sorted) {
+      if (daysBetween(d, ref) <= 1) {
+        streak += 1;
+        ref = d;
+      } else break;
+    }
+  }
+
+  /* ----- Render ----- */
   return (
-    <div className="flex flex-col justify-center items-center bg-white mr-6 rounded-lg border py-4">
-      <Avatar>
-        {user?.id ? (
-          <AvatarImage src={imageUrl} />
-        ) : (
-          <AvatarImage src="https://github.com/shadcn.png" />
-        )}
-        <AvatarFallback>
-          {firstName?.charAt(0)}
-          {lastName?.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      {/* ---- Cover (LinkedIn blue) ---- */}
+      <div className="h-14 bg-gradient-to-r from-blue-700 to-blue-600" />
 
-      <SignedIn>
-        <div className="text-center">
-          <p className="font-semibold">
-            {firstName} {lastName}
-          </p>
-          <p className="text-xs flex items-center justify-center">
-            @{firstName}
-            {lastName}-{user?.id?.slice(-4)}
-            {/* Twitter/Instagram-like Golden Badge */}
-            <svg
-              className="w-3 h-3 ml-1"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="#FFD700" // Golden fill
-            >
-              <path
-                fillRule="evenodd"
-                d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.25 8.75l-6.547 8.292a.75.75 0 01-1.155.035L6.75 13.75l-.943-.942a.75.75 0 011.086-1.036l.643.643L9.75 12.25l6.5-5.25a.75.75 0 011.136.057l.864 1.193a.75.75 0 01-.307 1.5z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </p>
+      {/* ---- Profile ---- */}
+      <div className="px-4 pb-4">
+        <div className="-mt-8 mb-2">
+          <Avatar className="h-16 w-16 ring-2 ring-white">
+            {user?.id ? (
+              <AvatarImage src={imageUrl} alt={fullName || 'User'} />
+            ) : (
+              <AvatarImage src="https://github.com/shadcn.png" />
+            )}
+            <AvatarFallback className="bg-blue-700 text-white text-lg font-semibold">
+              {firstName?.charAt(0)}
+              {lastName?.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
         </div>
-      </SignedIn>
 
+        <SignedIn>
+          <div>
+            <h3 className="text-base font-semibold text-gray-900 leading-tight hover:underline cursor-pointer">
+              {fullName}
+            </h3>
+            <p className="text-xs text-gray-600 mt-0.5 leading-snug">
+              Content creator · Building in public
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              @{firstName.toLowerCase()}
+              {lastName.toLowerCase()}-{user?.id?.slice(-4)}
+            </p>
+          </div>
+        </SignedIn>
+
+        <SignedOut>
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">
+              You are not signed in
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Sign in to see your analytics
+            </p>
+          </div>
+        </SignedOut>
+      </div>
+
+      {/* ---- Signed-out CTAs ---- */}
       <SignedOut>
-        <div className="text-center space-y-2">
-          <p className="font-semibold">You are Not signed in</p>
-          <Button asChild className="bg-blue-600 text-white text-sm py-1 px-2">
-            <SignInButton>Sign in</SignInButton>
-          </Button>
-          <Button asChild className="bg-blue-600 text-white text-sm py-1 px-2">
-            <SignUpButton>Sign up</SignUpButton>
-          </Button>
+        <div className="px-4 pb-4 space-y-2">
+          <SignInButton mode="modal">
+            <Button
+              variant="outline"
+              className="w-full rounded-full font-semibold border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
+              Sign in
+            </Button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <Button className="w-full rounded-full font-semibold bg-blue-600 hover:bg-blue-700 text-white">
+              Join now
+            </Button>
+          </SignUpButton>
         </div>
       </SignedOut>
 
-      <hr className="w-full border-gray-300 my-5" />
+      {/* ---- Signed-in analytics ---- */}
+      <SignedIn>
+        {/* Divider */}
+        <div className="h-px bg-gray-200" />
 
-      <div className="flex justify-between w-full px-4 text-sm">
-        <p className="font-semibold text-gray-400">Posts</p>
-        <p className="text-blue-400">{postsCount}</p>
-      </div>
+        {/* ─── ANALYTICS (LinkedIn style) ─── */}
+        <div className="px-4 py-3">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            Analytics
+          </h4>
 
-      <div className="flex justify-between w-full px-4 text-sm">
-        <p className="font-semibold text-gray-400">Comments</p>
-        <p className="text-blue-400">{commentsCount}</p>
-      </div>
+          <div className="space-y-0.5">
+            <AnalyticsRow
+              icon={<Eye className="h-4 w-4 text-gray-500" />}
+              label="Post impressions"
+              value={formatNumber(postImpressions)}
+            />
+            <AnalyticsRow
+              icon={<BarChart3 className="h-4 w-4 text-gray-500" />}
+              label="Engagement rate"
+              value={`${engagementRate}%`}
+            />
+            <AnalyticsRow
+              icon={<Users className="h-4 w-4 text-gray-500" />}
+              label="Search appearances"
+              value={formatNumber(searchAppearances)}
+            />
+            <AnalyticsRow
+              icon={<Flame className="h-4 w-4 text-gray-500" />}
+              label="Activity streak"
+              value={`${streak} ${streak === 1 ? 'day' : 'days'}`}
+            />
+          </div>
+        </div>
 
-      {/* Display the radial chart with posts and comments data */}
-      <UserRadialChart postsCount={postsCount} commentsCount={commentsCount} />
+        {/* Divider */}
+        <div className="h-px bg-gray-200" />
+
+        {/* ─── CONTENT STATS ─── */}
+        <div className="px-4 py-3">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            Content
+          </h4>
+
+          <div className="space-y-0.5">
+            <AnalyticsRow
+              icon={<MessageSquare className="h-4 w-4 text-gray-500" />}
+              label="Posts"
+              value={formatNumber(postsCount)}
+            />
+            <AnalyticsRow
+              icon={<MessageSquare className="h-4 w-4 text-gray-500" />}
+              label="Comments"
+              value={formatNumber(commentsCount)}
+            />
+            <AnalyticsRow
+              icon={<Heart className="h-4 w-4 text-gray-500" />}
+              label="Likes received"
+              value={formatNumber(totalLikesReceived)}
+            />
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-gray-200" />
+
+        {/* ─── FOOTER LINK (LinkedIn pattern) ─── */}
+        <button className="w-full flex items-center justify-center gap-1 px-4 py-2.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors">
+          <Search className="h-3.5 w-3.5" />
+          Show all analytics
+        </button>
+      </SignedIn>
     </div>
   );
 };
+
+/* ---------- Sub-components ---------- */
+
+function AnalyticsRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="flex items-center justify-between py-1.5 hover:bg-gray-50 rounded px-1 -mx-1 cursor-pointer transition-colors">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="shrink-0">{icon}</span>
+        <span className="text-xs text-gray-700 truncate">{label}</span>
+      </div>
+      <span className="text-sm font-semibold text-gray-900 ml-2 shrink-0">
+        {value}
+      </span>
+    </div>
+  );
+}
 
 export default UserInformation;

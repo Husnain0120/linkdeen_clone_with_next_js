@@ -1,193 +1,194 @@
-"use client";
+'use client';
 
-import { IPostDocument } from "@/mongodb/models/post.models";
-import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
-import React, { useEffect, useState } from "react";
-import { Button } from "./ui/button";
-import { MessageCircle, Repeat2, Send, ThumbsUpIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { LikePostRequestBody } from "@/app/api/posts/[post_id]/like/route";
-import { UnlikePostRequestBody } from "@/app/api/posts/[post_id]/unlike/route";
-
-import CommentFeed from "./CommentFeed";
-import CommentForm from "./CommentForm";
-import { toast } from "sonner";
-import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from "./ui/drawer"; // Drawer imports
-import { useRouter } from "next/navigation";
-import { DialogTitle } from "@radix-ui/react-dialog"; // Import DialogTitle for accessibility
+import { LikePostRequestBody } from '@/app/api/posts/[post_id]/like/route';
+import { UnlikePostRequestBody } from '@/app/api/posts/[post_id]/unlike/route';
+import { cn } from '@/lib/utils';
+import { IPostDocument } from '@/mongodb/models/post.models';
+import { SignedIn, SignedOut, useUser } from '@clerk/nextjs';
+import { MessageCircle, Repeat2, Send, ThumbsUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import CommentFeed from './CommentFeed';
+import CommentForm from './CommentForm';
+import { Button } from './ui/button';
 
 const PostOptions = ({ post }: { post: IPostDocument }) => {
-  const [isCommentsOpen, setIsCommentsOpen] = useState(false); // Drawer toggle state
   const { user } = useUser();
   const [liked, setLiked] = useState(false);
-  const router = useRouter();
+  const [showComments, setShowComments] = useState(false);
 
   const [likes, setLikes] = useState<string[]>(
-    Array.isArray(post.likes) ? post.likes : post.likes ? [post.likes] : [] // Normalize post.likes to always be an array
+    Array.isArray(post.likes) ? post.likes : post.likes ? [post.likes] : []
   );
 
-  const isAuthor = user?.id === post.user.userId;
-
   useEffect(() => {
-    if (user?.id && likes.includes(user.id)) {
-      setLiked(true);
-    }
-  }, [likes, user]);
+    setLiked(!!user?.id && likes.includes(user.id));
+  }, [likes, user?.id]);
 
   const likeOrUnlikePost = async () => {
-    if (!user?.id) {
-      toast.error("First login/signup to like post");
-      return;
-    }
+    if (!user?.id) throw new Error('Not authenticated');
 
+    const willLike = !liked;
     const originalLiked = liked;
     const originalLikes = likes;
 
-    const newLikes = liked
-      ? likes.filter((like) => like !== user.id)
-      : [...likes, user.id];
-
-    const body: LikePostRequestBody | UnlikePostRequestBody = {
-      userId: user.id,
-    };
-
-    setLiked(!liked);
-    setLikes(newLikes);
-
-    const response = await fetch(
-      `/api/posts/${post._id}/${liked ? "unlike" : "like"}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      }
+    // Optimistic update
+    setLiked(willLike);
+    setLikes(
+      willLike ? [...likes, user.id] : likes.filter(id => id !== user.id)
     );
 
-    if (!response.ok) {
+    try {
+      const body: LikePostRequestBody | UnlikePostRequestBody = {
+        userId: user.id,
+      };
+
+      const res = await fetch(
+        `/api/posts/${post._id}/${willLike ? 'like' : 'unlike'}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (!res.ok) throw new Error('Failed to update like');
+
+      const likesRes = await fetch(`/api/posts/${post._id}/like`);
+      if (!likesRes.ok) throw new Error('Failed to fetch likes');
+
+      const newLikes = await likesRes.json();
+      setLikes(newLikes);
+    } catch (err) {
       setLiked(originalLiked);
       setLikes(originalLikes);
-      throw new Error("Failed to like or unlike post");
+      throw err;
     }
-
-    const fetchLikesResponse = await fetch(`/api/posts/${post._id}/like`);
-
-    if (!fetchLikesResponse.ok) {
-      setLiked(originalLiked);
-      setLikes(originalLikes);
-      throw new Error("Failed to fetch likes");
-    }
-
-    const newLikeData = await fetchLikesResponse.json();
-    setLikes(newLikeData);
   };
+
+  const handleLikeClick = () => {
+    if (!user?.id) {
+      toast.error('Please login to like this post');
+      return;
+    }
+    const promise = likeOrUnlikePost();
+    toast.promise(promise, {
+      loading: liked ? 'Unliking post...' : 'Liking post...',
+      success: liked ? 'Post unliked' : 'Post liked',
+      error: liked ? 'Failed to unlike post' : 'Failed to like post',
+    });
+  };
+
+  const commentCount = post.comments?.length ?? 0;
+  const isCommentsVisible = showComments || commentCount > 0;
 
   return (
     <div>
-      <div className="flex justify-between p-4">
-        <div>
-          {likes.length > 0 && (
-            <p className="text-xs text-gray-500 cursor-pointer hover:underline">
-              {likes.length} likes
-            </p>
-          )}
+      {/* Stats row */}
+      {(likes.length > 0 || commentCount > 0) && (
+        <div className="flex items-center justify-between px-4 py-2 text-xs text-gray-500 border-t border-gray-100">
+          <div>
+            {likes.length > 0 && (
+              <span>
+                {likes.length} {likes.length === 1 ? 'like' : 'likes'}
+              </span>
+            )}
+          </div>
+          <div>
+            {commentCount > 0 && (
+              <button
+                onClick={() => setShowComments(true)}
+                className="hover:text-gray-700 hover:underline transition-colors"
+              >
+                {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+              </button>
+            )}
+          </div>
         </div>
+      )}
 
-        <div>
-          {post?.comments && post.comments.length > 0 && (
-            <p
-              onClick={() => setIsCommentsOpen(!isCommentsOpen)}
-              className="text-xs text-gray-600 cursor-pointer hover:underline"
-            >
-              {post.comments.length} comments
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex p-2 justify-between px-2 border-t">
+      {/* Action buttons */}
+      <div className="grid grid-cols-4 gap-1 px-2 py-1.5 border-t border-gray-100">
         <Button
-          variant={"ghost"}
-          className="postButton"
-          onClick={() => {
-            const promise = likeOrUnlikePost();
-            isAuthor &&
-              toast.promise(promise, {
-                loading: liked ? "Unliking post... " : "Liking post....",
-                success: liked
-                  ? "Post unliked successfully"
-                  : "Post liked successfully",
-                error: liked ? "Failed to unlike post" : "Failed to like post",
-              });
-          }}
+          variant="ghost"
+          onClick={handleLikeClick}
+          className={cn(
+            'h-9 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors',
+            liked && 'text-blue-600'
+          )}
         >
-          <ThumbsUpIcon
-            className={cn("mr-1", liked && "text-[#4881c2] fill-[#4881c2]")}
+          <ThumbsUp
+            className={cn(
+              'mr-1.5 h-4 w-4 transition-transform',
+              liked && 'fill-blue-600 text-blue-600 scale-110'
+            )}
           />
-          Like
+          <span className="text-xs font-medium hidden sm:inline">
+            {liked ? 'Liked' : 'Like'}
+          </span>
         </Button>
 
-        <Drawer open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-          <DrawerTrigger asChild>
-            <Button variant={"ghost"} className="postButton">
-              <MessageCircle
-                className={cn(
-                  "mr-1",
-                  isCommentsOpen && "text-gray-600  fill-gray-600"
-                )}
-              />
-              Comment
-            </Button>
-          </DrawerTrigger>
+        <Button
+          variant="ghost"
+          onClick={() => setShowComments(v => !v)}
+          className={cn(
+            'h-9 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors',
+            showComments && 'text-gray-900 bg-gray-50'
+          )}
+        >
+          <MessageCircle
+            className={cn(
+              'mr-1.5 h-4 w-4 transition-transform',
+              showComments && 'fill-gray-900 text-gray-900'
+            )}
+          />
+          <span className="text-xs font-medium hidden sm:inline">Comment</span>
+        </Button>
 
-          <DrawerContent className="p-4 h-[75vh] flex flex-col fixed bottom-0 left-0 right-0 max-h-[75vh] overflow-hidden">
-            <div className="flex justify-between items-center mb-4">
-              {/* Centered title and added DialogTitle for accessibility */}
-              <DialogTitle asChild>
-                <h2 className="text-lg font-bold text-orange-600 text-center flex-1">
-                  Comments
-                </h2>
-              </DialogTitle>
-              <DrawerClose asChild>
-                <Button
-                  variant="ghost"
-                  onClick={() => setIsCommentsOpen(false)}
-                >
-                  Close
-                </Button>
-              </DrawerClose>
-            </div>
+        <Button
+          variant="ghost"
+          className="h-9 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+        >
+          <Repeat2 className="mr-1.5 h-4 w-4" />
+          <span className="text-xs font-medium hidden sm:inline">Repost</span>
+        </Button>
 
-            {/* Scrollable comment feed */}
-            <div className="flex-1 overflow-y-auto mb-4">
+        <Button
+          variant="ghost"
+          className="h-9 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+        >
+          <Send className="mr-1.5 h-4 w-4" />
+          <span className="text-xs font-medium hidden sm:inline">Send</span>
+        </Button>
+      </div>
+
+      {/* 🟦 Inline Comments section (LinkedIn-style, no drawer) */}
+      {isCommentsVisible && (
+        <div className="border-t border-gray-100 bg-white px-4 pt-3 pb-3">
+          <SignedIn>
+            <CommentForm postId={post._id.toString()} />
+          </SignedIn>
+          <SignedOut>
+            <p className="text-center text-sm text-gray-500 font-medium py-2">
+              Please{' '}
+              <span className="text-blue-600 hover:underline cursor-pointer">
+                login
+              </span>{' '}
+              or{' '}
+              <span className="text-blue-600 hover:underline cursor-pointer">
+                signup
+              </span>{' '}
+              to comment
+            </p>
+          </SignedOut>
+
+          {commentCount > 0 && (
+            <div className="mt-3">
               <CommentFeed post={post} />
             </div>
-
-            {/* Fixed comment form at the bottom */}
-            <div className="border-t pt-4">
-              <SignedIn>
-                <CommentForm postId={post._id.toString()} />
-              </SignedIn>
-              <SignedOut>
-                <p className="text-center text-sm text-gray-600 font-medium">
-                  Please Login/Signup to Comment
-                </p>
-              </SignedOut>
-            </div>
-          </DrawerContent>
-        </Drawer>
-
-        <Button variant={"ghost"} className="postButton">
-          <Repeat2 className="mr-1" />
-          Repost
-        </Button>
-
-        <Button className="postButton" variant={"ghost"}>
-          <Send className="mr-1 hidden sm:block" />
-          <span className="hidden sm:block"> Send</span>
-        </Button>
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
