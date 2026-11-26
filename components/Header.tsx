@@ -1,6 +1,13 @@
 'use client';
 
+// ─────────────────────────────────────────────────────────────
+// Clerk auth
+// ─────────────────────────────────────────────────────────────
 import { SignedIn, SignedOut, useClerk, useUser } from '@clerk/nextjs';
+
+// ─────────────────────────────────────────────────────────────
+// Icons
+// ─────────────────────────────────────────────────────────────
 import {
   Bell,
   Briefcase,
@@ -16,11 +23,22 @@ import {
   Settings,
   Users,
 } from 'lucide-react';
+
+// ─────────────────────────────────────────────────────────────
+// Next.js
+// ─────────────────────────────────────────────────────────────
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+
+// ─────────────────────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────────────────────
 import { toast } from 'sonner';
 
+// ─────────────────────────────────────────────────────────────
+// UI components
+// ─────────────────────────────────────────────────────────────
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,33 +52,38 @@ import {
 } from '@/components/ui/drawer';
 import { cn } from '@/lib/utils';
 
-/* ---------------- Nav config ---------------- */
+/* ═════════════════════════════════════════════════════════════
+   NAV CONFIG
+   ═════════════════════════════════════════════════════════════ */
 type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  href?: string;
+  href?: string; // ⚠️ if missing → click shows "coming soon" toast
   badge?: number;
 };
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
-  { label: 'Network', icon: Users },
-  { label: 'Jobs', icon: Briefcase },
-  { label: 'Messaging', icon: MessageSquare },
-  { label: 'Notifications', icon: Bell, badge: 6 },
+  { href: '/network', label: 'Network', icon: Users },
+  { href: '/jobs', label: 'Jobs', icon: Briefcase },
+  { href: '/messaging', label: 'Messaging', icon: MessageSquare },
+  { href: '/notifications', label: 'Notifications', icon: Bell, badge: 16 }, // no route yet
 ];
 
+/**
+ * Placeholder toast for features that don't have a page yet.
+ */
 function comingSoon(name?: string) {
   toast.info(name ? `${name} is coming soon 🚀` : 'Coming soon 🚀', {
     description: "We're working on it — stay tuned!",
   });
 }
 
-/* ============================================================
-   AUTH BUTTONS — LinkedIn exact
-   • Join now  → filled blue  (#0A66C2)
-   • Sign in   → outlined blue
-   ============================================================ */
+/* ═════════════════════════════════════════════════════════════
+   AUTH BUTTONS — LinkedIn exact styles
+   • Sign in  → outlined blue  (#0A66C2)
+   • Join now → filled blue
+   ═════════════════════════════════════════════════════════════ */
 function AuthButtons({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
   const { openSignIn, openSignUp } = useClerk();
 
@@ -68,7 +91,7 @@ function AuthButtons({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Sign in — outlined */}
+      {/* ── Sign in (outlined) ── */}
       <button
         type="button"
         onClick={() => openSignIn()}
@@ -82,7 +105,7 @@ function AuthButtons({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
         Sign in
       </button>
 
-      {/* Join now — filled */}
+      {/* ── Join now (filled) ── */}
       <button
         type="button"
         onClick={() => openSignUp()}
@@ -99,13 +122,17 @@ function AuthButtons({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
   );
 }
 
-/* ---------------- Desktop nav item ---------------- */
+/* ═════════════════════════════════════════════════════════════
+   DESKTOP NAV ITEM — with active underline
+   ═════════════════════════════════════════════════════════════ */
 function DesktopNavItem({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
   const isClickable = !!item.href;
 
+  /* Shared inner markup — icon + optional badge + label + active line */
   const content = (
     <>
+      {/* Icon (with optional badge) */}
       <div className="relative">
         <Icon
           className={cn(
@@ -119,6 +146,8 @@ function DesktopNavItem({ item, active }: { item: NavItem; active: boolean }) {
           </span>
         ) : null}
       </div>
+
+      {/* Label */}
       <span
         className={cn(
           'text-[11px] mt-0.5 leading-tight transition-colors',
@@ -129,15 +158,19 @@ function DesktopNavItem({ item, active }: { item: NavItem; active: boolean }) {
       >
         {item.label}
       </span>
+
+      {/* ⭐ Active underline — only renders when this route matches */}
       {active && (
         <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />
       )}
     </>
   );
 
+  // 'relative' is required so the absolute bottom line positions correctly
   const baseClass =
     'group relative flex flex-col items-center justify-center h-full min-w-[80px] px-2 transition-colors';
 
+  // Real page → render a Link
   if (isClickable) {
     return (
       <Link href={item.href!} className={baseClass}>
@@ -146,6 +179,7 @@ function DesktopNavItem({ item, active }: { item: NavItem; active: boolean }) {
     );
   }
 
+  // No page yet → render a button that shows "coming soon"
   return (
     <button
       type="button"
@@ -157,11 +191,16 @@ function DesktopNavItem({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-/* ---------------- More dropdown ---------------- */
+/* ═════════════════════════════════════════════════════════════
+   MORE MENU — grid icon dropdown (Settings & Privacy / Help)
+   ✅ FIXED: each item now routes to its own page
+   ═════════════════════════════════════════════════════════════ */
 function MoreMenu() {
+  const router = useRouter(); // ✅ moved to top (was declared later)
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  /* Close on outside click */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node))
@@ -171,13 +210,15 @@ function MoreMenu() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  /* ✅ Each item carries its own href */
   const items = [
-    { label: 'Settings & Privacy', icon: Settings },
-    { label: 'Help Center', icon: HelpCircle },
+    { label: 'Settings & Privacy', icon: Settings, href: '/settings/privacy' },
+    { label: 'Help Center', icon: HelpCircle, href: '/help' },
   ];
 
   return (
     <div ref={ref} className="relative h-full">
+      {/* Trigger */}
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
@@ -195,15 +236,16 @@ function MoreMenu() {
         </span>
       </button>
 
+      {/* Dropdown */}
       {open && (
         <div className="absolute right-0 top-full mt-1 w-60 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
-          {items.map(({ label, icon: Icon }) => (
+          {items.map(({ label, icon: Icon, href }) => (
             <button
               key={label}
               type="button"
               onClick={() => {
                 setOpen(false);
-                comingSoon(label);
+                router.push(href); // ✅ now routes properly per item
               }}
               className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
             >
@@ -217,7 +259,9 @@ function MoreMenu() {
   );
 }
 
-/* ---------------- Me dropdown ---------------- */
+/* ═════════════════════════════════════════════════════════════
+   ME DROPDOWN — user avatar + account menu
+   ═════════════════════════════════════════════════════════════ */
 function MeDropdown() {
   const { user } = useUser();
   const { signOut } = useClerk();
@@ -225,6 +269,7 @@ function MeDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  /* Close on outside click */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node))
@@ -236,7 +281,7 @@ function MeDropdown() {
 
   if (!user) return null;
 
-  /* ---- Reliable sign out ---- */
+  /* Sign out — await, then redirect */
   const handleSignOut = async () => {
     setOpen(false);
     try {
@@ -250,6 +295,7 @@ function MeDropdown() {
 
   return (
     <div ref={ref} className="relative h-full">
+      {/* Trigger */}
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
@@ -270,8 +316,10 @@ function MeDropdown() {
         </span>
       </button>
 
+      {/* Dropdown */}
       {open && (
         <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
+          {/* User info header */}
           <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={user.imageUrl} />
@@ -290,33 +338,27 @@ function MeDropdown() {
             </div>
           </div>
 
+          {/* Menu items */}
           <button
-            onClick={() => {
-              router.push('/static_profile');
-            }}
+            onClick={() => router.push('/static_profile')}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             View profile
           </button>
           <button
-            onClick={() => {
-              setOpen(false);
-              comingSoon('Settings');
-            }}
+            onClick={() => router.push('/settings/privacy')}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             Settings & Privacy
           </button>
           <button
-            onClick={() => {
-              setOpen(false);
-              comingSoon('Help');
-            }}
+            onClick={() => router.push('/help')}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             Help
           </button>
 
+          {/* Sign out */}
           <div className="border-t border-gray-100 mt-1 pt-1">
             <button
               onClick={handleSignOut}
@@ -331,7 +373,9 @@ function MeDropdown() {
   );
 }
 
-/* ---------------- Business / Advertise ---------------- */
+/* ═════════════════════════════════════════════════════════════
+   BUSINESS / ADVERTISE menu items (still "coming soon")
+   ═════════════════════════════════════════════════════════════ */
 function BusinessMenuItem({
   icon: Icon,
   label,
@@ -356,9 +400,12 @@ function BusinessMenuItem({
   );
 }
 
-/* ---------------- Mobile nav link ---------------- */
+/* ═════════════════════════════════════════════════════════════
+   MOBILE NAV LINK
+   ═════════════════════════════════════════════════════════════ */
 function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
+
   const baseClass = cn(
     'relative flex flex-col items-center justify-center gap-1 p-3 rounded-lg transition-colors',
     active ? 'text-black' : 'text-gray-600 hover:text-black hover:bg-gray-50'
@@ -397,15 +444,21 @@ function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-/* ---------------- Header ---------------- */
+/* ═════════════════════════════════════════════════════════════
+   HEADER — top-level export
+   ═════════════════════════════════════════════════════════════ */
 export default function Header() {
-  const pathname = usePathname();
+  const pathname = usePathname(); // used to compute `active`
+  const router = useRouter(); // needed for mobile drawer routes
 
   return (
     <>
-      {/* ================= MOBILE HEADER ================= */}
+      {/* ═════════════════════════════════════════════════════════
+          MOBILE HEADER (visible < md)
+          ═════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-40 md:hidden bg-white border-b border-gray-200">
         <div className="flex items-center gap-2 px-3 h-14">
+          {/* Logo */}
           <Link href="/" className="shrink-0" aria-label="Home">
             <div className="w-8 h-8 bg-[#0A66C2] rounded flex items-center justify-center">
               <span className="text-white font-bold text-lg leading-none">
@@ -414,6 +467,7 @@ export default function Header() {
             </div>
           </Link>
 
+          {/* Fake search */}
           <button
             type="button"
             onClick={() => comingSoon('Search')}
@@ -423,6 +477,7 @@ export default function Header() {
             <span className="text-sm text-gray-600 truncate">Search</span>
           </button>
 
+          {/* Create post */}
           <Button
             asChild
             variant="ghost"
@@ -434,6 +489,7 @@ export default function Header() {
             </Link>
           </Button>
 
+          {/* Mobile drawer */}
           <Drawer>
             <DrawerTrigger asChild>
               <Button
@@ -445,14 +501,18 @@ export default function Header() {
                 <MoreHorizontal className="h-5 w-5" />
               </Button>
             </DrawerTrigger>
+
             <DrawerContent className="rounded-t-2xl">
               <DrawerHeader className="text-left border-b">
                 <DrawerTitle className="text-base font-semibold">
                   Menu
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="grid grid-cols-4 gap-1 px-3 py-4">
-                {NAV_ITEMS.slice(0, 4).map(item => (
+
+              {/* ✅ FIX: show ALL items (was slice(0,4) which hid Notifications)
+                  and use grid-cols-5 to fit them */}
+              <div className="grid grid-cols-5 gap-1 px-3 py-4">
+                {NAV_ITEMS.map(item => (
                   <MobileNavLink
                     key={item.label}
                     item={item}
@@ -460,15 +520,21 @@ export default function Header() {
                   />
                 ))}
               </div>
+
+              {/* ✅ FIX: Settings / Help now route instead of comingSoon */}
               <div className="border-t px-3 py-2 space-y-0.5">
                 {[
-                  { label: 'Settings', icon: Settings },
-                  { label: 'Help Center', icon: HelpCircle },
-                ].map(({ label, icon: Icon }) => (
+                  {
+                    label: 'Settings',
+                    icon: Settings,
+                    href: '/settings/privacy',
+                  },
+                  { label: 'Help Center', icon: HelpCircle, href: '/help' },
+                ].map(({ label, icon: Icon, href }) => (
                   <button
                     key={label}
                     type="button"
-                    onClick={() => comingSoon(label)}
+                    onClick={() => router.push(href)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 text-left text-gray-700"
                   >
                     <Icon className="h-5 w-5" />
@@ -477,6 +543,7 @@ export default function Header() {
                 ))}
               </div>
 
+              {/* Auth (only when signed out) */}
               <DrawerFooter className="border-t">
                 <SignedOut>
                   <div className="w-full">
@@ -494,12 +561,14 @@ export default function Header() {
         </div>
       </header>
 
-      {/* ================= DESKTOP HEADER ================= */}
+      {/* ═════════════════════════════════════════════════════════
+          DESKTOP HEADER (visible ≥ md)
+          ═════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-40 hidden md:block bg-white border-b border-gray-200">
         <div className="max-w-[1128px] mx-auto flex items-center gap-2 h-14 px-4">
           {/* Logo */}
           <Link href="/" className="shrink-0 mr-1" aria-label="Home">
-            <div className="w-8 h-8 bg-[#0A66C2] rounded-full flex  items-center justify-center">
+            <div className="w-8 h-8 bg-[#0A66C2] rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-lg leading-none">
                 ni
               </span>
@@ -516,7 +585,7 @@ export default function Header() {
             <span className="text-sm text-gray-600 truncate">Search</span>
           </button>
 
-          {/* Nav */}
+          {/* Main nav (right-aligned) */}
           <nav className="ml-auto flex items-center h-full">
             {NAV_ITEMS.map(item => (
               <DesktopNavItem
@@ -528,7 +597,7 @@ export default function Header() {
             <MoreMenu />
           </nav>
 
-          {/* Divider */}
+          {/* Vertical divider */}
           <span className="h-8 w-px bg-gray-200 ml-1" />
 
           {/* Me / Auth */}
@@ -541,10 +610,10 @@ export default function Header() {
             </SignedOut>
           </div>
 
-          {/* Divider */}
+          {/* Vertical divider (xl only) */}
           <span className="h-8 w-px bg-gray-200 hidden xl:block ml-1" />
 
-          {/* Business + Advertise */}
+          {/* Business + Advertise (xl only) */}
           <div className="hidden xl:flex items-center h-full pl-1">
             <BusinessMenuItem icon={Grid3x3} label="For Business" withChevron />
             <BusinessMenuItem icon={Megaphone} label="Advertise" />
