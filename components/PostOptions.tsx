@@ -4,13 +4,28 @@ import { LikePostRequestBody } from '@/app/api/posts/[post_id]/like/route';
 import { UnlikePostRequestBody } from '@/app/api/posts/[post_id]/unlike/route';
 import { cn } from '@/lib/utils';
 import { IPostDocument } from '@/mongodb/models/post.models';
-import { SignedIn, SignedOut, useUser } from '@clerk/nextjs';
-import { MessageCircle, Repeat2, Send, ThumbsUp } from 'lucide-react';
+import { Show, useUser } from '@clerk/nextjs';
+import {
+  ChevronDown,
+  ChevronUp,
+  MessageCircle,
+  Repeat2,
+  Send,
+  ThumbsUp,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import CommentFeed from './CommentFeed';
 import CommentForm from './CommentForm';
 import { Button } from './ui/button';
+
+/* ─── Utility: format big numbers like 50,000 → 50K ─── */
+function formatCount(n: number) {
+  if (n >= 1_000_000)
+    return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
 
 const PostOptions = ({ post }: { post: IPostDocument }) => {
   const { user } = useUser();
@@ -80,34 +95,40 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
   };
 
   const commentCount = post.comments?.length ?? 0;
-  const isCommentsVisible = showComments || commentCount > 0;
+
+  /* ═══════════════════════════════════════════════════════════
+     🔴 CORE FIX — comments sirf tab show hon jab user click kare
+     ═══════════════════════════════════════════════════════════ */
+  const isCommentsVisible = showComments;
 
   return (
     <div>
-      {/* Stats row */}
+      {/* ── Stats row ── */}
       {(likes.length > 0 || commentCount > 0) && (
         <div className="flex items-center justify-between px-4 py-2 text-xs text-gray-500 border-t border-gray-100">
           <div>
             {likes.length > 0 && (
               <span>
-                {likes.length} {likes.length === 1 ? 'like' : 'likes'}
+                {formatCount(likes.length)}{' '}
+                {likes.length === 1 ? 'like' : 'likes'}
               </span>
             )}
           </div>
           <div>
             {commentCount > 0 && (
               <button
-                onClick={() => setShowComments(true)}
+                onClick={() => setShowComments(v => !v)}
                 className="hover:text-gray-700 hover:underline transition-colors"
               >
-                {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+                {formatCount(commentCount)}{' '}
+                {commentCount === 1 ? 'comment' : 'comments'}
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Action buttons */}
+      {/* ── Action buttons ── */}
       <div className="grid grid-cols-4 gap-1 px-2 py-1.5 border-t border-gray-100">
         <Button
           variant="ghost"
@@ -162,13 +183,44 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
         </Button>
       </div>
 
-      {/* 🟦 Inline Comments section (LinkedIn-style, no drawer) */}
+      {/* ═══════════════════════════════════════════════════════════
+          ⚡ NEW — "View all comments" pill (collapsed state)
+          Ye sirf tab dikhta hai jab comments mojood hon lakin
+          user ne abhi expand nahi kiya. Card compact rehta hai.
+          ═══════════════════════════════════════════════════════════ */}
+      {!isCommentsVisible && commentCount > 0 && (
+        <button
+          onClick={() => setShowComments(true)}
+          className="w-full flex items-center justify-between px-4 py-2 border-t border-gray-100 hover:bg-gray-50 transition-colors group"
+        >
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+            <MessageCircle className="h-3.5 w-3.5 text-gray-500" />
+            View all {formatCount(commentCount)} comments
+          </span>
+          <ChevronDown className="h-3.5 w-3.5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+        </button>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          Comments section — sirf tab render hota hai jab expanded ho
+          ═══════════════════════════════════════════════════════════ */}
       {isCommentsVisible && (
         <div className="border-t border-gray-100 bg-white px-4 pt-3 pb-3">
-          <SignedIn>
+          {/* Collapse button (when user wants to close) */}
+          {commentCount > 0 && (
+            <button
+              onClick={() => setShowComments(false)}
+              className="mb-2 inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+              Hide comments
+            </button>
+          )}
+
+          <Show when={'signed-in'}>
             <CommentForm postId={post._id.toString()} />
-          </SignedIn>
-          <SignedOut>
+          </Show>
+          <Show when={'signed-out'}>
             <p className="text-center text-sm text-gray-500 font-medium py-2">
               Please{' '}
               <span className="text-blue-600 hover:underline cursor-pointer">
@@ -180,7 +232,7 @@ const PostOptions = ({ post }: { post: IPostDocument }) => {
               </span>{' '}
               to comment
             </p>
-          </SignedOut>
+          </Show>
 
           {commentCount > 0 && (
             <div className="mt-3">

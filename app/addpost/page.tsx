@@ -1,13 +1,12 @@
-import PostForm from "@/components/PostForm";
-import { SignedIn } from "@clerk/nextjs";
-import React from "react";
+import PostForm from '@/components/PostForm';
+import { Show } from '@clerk/nextjs';
 
 const page = () => {
   return (
     <span>
-      <SignedIn>
+      <Show when={'signed-in'}>
         <PostForm />
-      </SignedIn>
+      </Show>
     </span>
   );
 };

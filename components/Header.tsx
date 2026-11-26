@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 // Clerk auth
 // ─────────────────────────────────────────────────────────────
-import { SignedIn, SignedOut, useClerk, useUser } from '@clerk/nextjs';
+import { Show, useClerk, useUser } from '@clerk/nextjs';
 
 // ─────────────────────────────────────────────────────────────
 // Icons
@@ -15,12 +15,14 @@ import {
   Grid3x3,
   HelpCircle,
   Home,
+  LogOut,
   Megaphone,
   MessageSquare,
   MoreHorizontal,
   Plus,
   Search,
   Settings,
+  User,
   Users,
 } from 'lucide-react';
 
@@ -58,7 +60,7 @@ import { cn } from '@/lib/utils';
 type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  href?: string; // ⚠️ if missing → click shows "coming soon" toast
+  href?: string;
   badge?: number;
 };
 
@@ -67,12 +69,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/network', label: 'Network', icon: Users },
   { href: '/jobs', label: 'Jobs', icon: Briefcase },
   { href: '/messaging', label: 'Messaging', icon: MessageSquare },
-  { href: '/notifications', label: 'Notifications', icon: Bell, badge: 16 }, // no route yet
+  { href: '/notifications', label: 'Notifications', icon: Bell, badge: 16 },
 ];
 
-/**
- * Placeholder toast for features that don't have a page yet.
- */
 function comingSoon(name?: string) {
   toast.info(name ? `${name} is coming soon 🚀` : 'Coming soon 🚀', {
     description: "We're working on it — stay tuned!",
@@ -80,18 +79,20 @@ function comingSoon(name?: string) {
 }
 
 /* ═════════════════════════════════════════════════════════════
-   AUTH BUTTONS — LinkedIn exact styles
-   • Sign in  → outlined blue  (#0A66C2)
-   • Join now → filled blue
+   AUTH BUTTONS
    ═════════════════════════════════════════════════════════════ */
 function AuthButtons({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
   const { openSignIn, openSignUp } = useClerk();
-
-  const sizeClasses = size === 'lg' ? 'h-10 px-6 text-sm' : 'h-8 px-4 text-sm';
+  const sizeClasses =
+    size === 'lg' ? 'h-10 px-6 text-sm w-full' : 'h-8 px-4 text-sm';
 
   return (
-    <div className="flex items-center gap-2">
-      {/* ── Sign in (outlined) ── */}
+    <div
+      className={cn(
+        'flex items-center gap-2',
+        size === 'lg' && 'flex-col w-full'
+      )}
+    >
       <button
         type="button"
         onClick={() => openSignIn()}
@@ -104,8 +105,6 @@ function AuthButtons({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
       >
         Sign in
       </button>
-
-      {/* ── Join now (filled) ── */}
       <button
         type="button"
         onClick={() => openSignUp()}
@@ -123,16 +122,12 @@ function AuthButtons({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
 }
 
 /* ═════════════════════════════════════════════════════════════
-   DESKTOP NAV ITEM — with active underline
+   DESKTOP NAV ITEM
    ═════════════════════════════════════════════════════════════ */
 function DesktopNavItem({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
-  const isClickable = !!item.href;
-
-  /* Shared inner markup — icon + optional badge + label + active line */
   const content = (
     <>
-      {/* Icon (with optional badge) */}
       <div className="relative">
         <Icon
           className={cn(
@@ -146,8 +141,6 @@ function DesktopNavItem({ item, active }: { item: NavItem; active: boolean }) {
           </span>
         ) : null}
       </div>
-
-      {/* Label */}
       <span
         className={cn(
           'text-[11px] mt-0.5 leading-tight transition-colors',
@@ -158,28 +151,22 @@ function DesktopNavItem({ item, active }: { item: NavItem; active: boolean }) {
       >
         {item.label}
       </span>
-
-      {/* ⭐ Active underline — only renders when this route matches */}
       {active && (
         <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />
       )}
     </>
   );
 
-  // 'relative' is required so the absolute bottom line positions correctly
   const baseClass =
     'group relative flex flex-col items-center justify-center h-full min-w-[80px] px-2 transition-colors';
 
-  // Real page → render a Link
-  if (isClickable) {
+  if (item.href) {
     return (
-      <Link href={item.href!} className={baseClass}>
+      <Link href={item.href} className={baseClass}>
         {content}
       </Link>
     );
   }
-
-  // No page yet → render a button that shows "coming soon"
   return (
     <button
       type="button"
@@ -192,15 +179,13 @@ function DesktopNavItem({ item, active }: { item: NavItem; active: boolean }) {
 }
 
 /* ═════════════════════════════════════════════════════════════
-   MORE MENU — grid icon dropdown (Settings & Privacy / Help)
-   ✅ FIXED: each item now routes to its own page
+   MORE MENU
    ═════════════════════════════════════════════════════════════ */
 function MoreMenu() {
-  const router = useRouter(); // ✅ moved to top (was declared later)
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  /* Close on outside click */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node))
@@ -210,7 +195,6 @@ function MoreMenu() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
-  /* ✅ Each item carries its own href */
   const items = [
     { label: 'Settings & Privacy', icon: Settings, href: '/settings/privacy' },
     { label: 'Help Center', icon: HelpCircle, href: '/help' },
@@ -218,7 +202,6 @@ function MoreMenu() {
 
   return (
     <div ref={ref} className="relative h-full">
-      {/* Trigger */}
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
@@ -229,14 +212,12 @@ function MoreMenu() {
       >
         <Grid3x3 className="h-[22px] w-[22px]" />
         <span className="text-[11px] mt-0.5 flex items-center gap-0.5 leading-tight">
-          More
+          More{' '}
           <ChevronDown
             className={cn('h-3 w-3 transition-transform', open && 'rotate-180')}
           />
         </span>
       </button>
-
-      {/* Dropdown */}
       {open && (
         <div className="absolute right-0 top-full mt-1 w-60 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
           {items.map(({ label, icon: Icon, href }) => (
@@ -245,12 +226,11 @@ function MoreMenu() {
               type="button"
               onClick={() => {
                 setOpen(false);
-                router.push(href); // ✅ now routes properly per item
+                router.push(href);
               }}
               className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
             >
-              <Icon className="h-4 w-4 text-gray-500" />
-              {label}
+              <Icon className="h-4 w-4 text-gray-500" /> {label}
             </button>
           ))}
         </div>
@@ -260,7 +240,7 @@ function MoreMenu() {
 }
 
 /* ═════════════════════════════════════════════════════════════
-   ME DROPDOWN — user avatar + account menu
+   ME DROPDOWN
    ═════════════════════════════════════════════════════════════ */
 function MeDropdown() {
   const { user } = useUser();
@@ -269,7 +249,6 @@ function MeDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  /* Close on outside click */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node))
@@ -281,21 +260,18 @@ function MeDropdown() {
 
   if (!user) return null;
 
-  /* Sign out — await, then redirect */
   const handleSignOut = async () => {
     setOpen(false);
     try {
       await signOut();
       router.push('/');
     } catch (err) {
-      console.error('Sign out failed', err);
       toast.error('Failed to sign out');
     }
   };
 
   return (
     <div ref={ref} className="relative h-full">
-      {/* Trigger */}
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
@@ -309,17 +285,15 @@ function MeDropdown() {
           </AvatarFallback>
         </Avatar>
         <span className="text-[11px] text-gray-600 group-hover:text-black mt-0.5 flex items-center gap-0.5 leading-tight">
-          Me
+          Me{' '}
           <ChevronDown
             className={cn('h-3 w-3 transition-transform', open && 'rotate-180')}
           />
         </span>
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
-          {/* User info header */}
           <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={user.imageUrl} />
@@ -337,28 +311,33 @@ function MeDropdown() {
               </p>
             </div>
           </div>
-
-          {/* Menu items */}
           <button
-            onClick={() => router.push('/static_profile')}
+            onClick={() => {
+              setOpen(false);
+              router.push('/static_profile');
+            }}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             View profile
           </button>
           <button
-            onClick={() => router.push('/settings/privacy')}
+            onClick={() => {
+              setOpen(false);
+              router.push('/settings/privacy');
+            }}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             Settings & Privacy
           </button>
           <button
-            onClick={() => router.push('/help')}
+            onClick={() => {
+              setOpen(false);
+              router.push('/help');
+            }}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             Help
           </button>
-
-          {/* Sign out */}
           <div className="border-t border-gray-100 mt-1 pt-1">
             <button
               onClick={handleSignOut}
@@ -374,7 +353,7 @@ function MeDropdown() {
 }
 
 /* ═════════════════════════════════════════════════════════════
-   BUSINESS / ADVERTISE menu items (still "coming soon")
+   BUSINESS / ADVERTISE MENU
    ═════════════════════════════════════════════════════════════ */
 function BusinessMenuItem({
   icon: Icon,
@@ -393,8 +372,7 @@ function BusinessMenuItem({
     >
       <Icon className="h-[22px] w-[22px]" />
       <span className="text-[11px] mt-0.5 flex items-center gap-0.5 leading-tight text-center">
-        {label}
-        {withChevron && <ChevronDown className="h-3 w-3" />}
+        {label} {withChevron && <ChevronDown className="h-3 w-3" />}
       </span>
     </button>
   );
@@ -405,7 +383,6 @@ function BusinessMenuItem({
    ═════════════════════════════════════════════════════════════ */
 function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
-
   const baseClass = cn(
     'relative flex flex-col items-center justify-center gap-1 p-3 rounded-lg transition-colors',
     active ? 'text-black' : 'text-gray-600 hover:text-black hover:bg-gray-50'
@@ -425,14 +402,12 @@ function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
     </>
   );
 
-  if (item.href) {
+  if (item.href)
     return (
       <Link href={item.href} className={baseClass}>
         {inner}
       </Link>
     );
-  }
-
   return (
     <button
       type="button"
@@ -445,29 +420,38 @@ function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
 }
 
 /* ═════════════════════════════════════════════════════════════
-   HEADER — top-level export
+   HEADER
    ═════════════════════════════════════════════════════════════ */
 export default function Header() {
-  const pathname = usePathname(); // used to compute `active`
-  const router = useRouter(); // needed for mobile drawer routes
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push('/');
+    } catch (err) {
+      toast.error('Failed to sign out');
+    }
+  };
 
   return (
     <>
       {/* ═════════════════════════════════════════════════════════
-          MOBILE HEADER (visible < md)
+          MOBILE HEADER
           ═════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-40 md:hidden bg-white border-b border-gray-200">
         <div className="flex items-center gap-2 px-3 h-14">
-          {/* Logo */}
           <Link href="/" className="shrink-0" aria-label="Home">
             <div className="w-8 h-8 bg-[#0A66C2] rounded flex items-center justify-center">
-              <span className="text-white font-bold text-lg leading-none">
-                R
+              <span className="text-white font-bold text-[15px] tracking-tighter leading-none mt-0.5">
+                ni
               </span>
             </div>
           </Link>
 
-          {/* Fake search */}
           <button
             type="button"
             onClick={() => comingSoon('Search')}
@@ -477,19 +461,19 @@ export default function Header() {
             <span className="text-sm text-gray-600 truncate">Search</span>
           </button>
 
-          {/* Create post */}
+          {/* ✅ UPDATED: Removed redirect, opens the Post Modal via custom event */}
           <Button
-            asChild
+            onClick={() => {
+              window.dispatchEvent(new Event('open-create-post'));
+            }}
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full text-gray-600 hover:bg-gray-100 hover:text-black shrink-0"
+            aria-label="Create new post"
           >
-            <Link href="/addpost" aria-label="Create new post">
-              <Plus className="h-5 w-5" />
-            </Link>
+            <Plus className="h-5 w-5" />
           </Button>
 
-          {/* Mobile drawer */}
           <Drawer>
             <DrawerTrigger asChild>
               <Button
@@ -502,56 +486,97 @@ export default function Header() {
               </Button>
             </DrawerTrigger>
 
-            <DrawerContent className="rounded-t-2xl">
-              <DrawerHeader className="text-left border-b">
+            <DrawerContent className="rounded-t-2xl max-h-[85vh] flex flex-col">
+              <DrawerHeader className="text-left border-b shrink-0 pb-3">
                 <DrawerTitle className="text-base font-semibold">
                   Menu
                 </DrawerTitle>
               </DrawerHeader>
 
-              {/* ✅ FIX: show ALL items (was slice(0,4) which hid Notifications)
-                  and use grid-cols-5 to fit them */}
-              <div className="grid grid-cols-5 gap-1 px-3 py-4">
-                {NAV_ITEMS.map(item => (
-                  <MobileNavLink
-                    key={item.label}
-                    item={item}
-                    active={!!item.href && pathname === item.href}
-                  />
-                ))}
-              </div>
+              <div className="overflow-y-auto flex-1">
+                <Show when="signed-in">
+                  <div className="px-4 py-4 border-b flex items-center gap-3 bg-gray-50/50">
+                    <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+                      <AvatarImage src={user?.imageUrl} />
+                      <AvatarFallback className="bg-[#0A66C2] text-white">
+                        {user?.firstName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">
+                        {user?.firstName} {user?.lastName}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user?.primaryEmailAddress?.emailAddress}
+                      </p>
+                    </div>
+                  </div>
+                </Show>
 
-              {/* ✅ FIX: Settings / Help now route instead of comingSoon */}
-              <div className="border-t px-3 py-2 space-y-0.5">
-                {[
-                  {
-                    label: 'Settings',
-                    icon: Settings,
-                    href: '/settings/privacy',
-                  },
-                  { label: 'Help Center', icon: HelpCircle, href: '/help' },
-                ].map(({ label, icon: Icon, href }) => (
+                <div className="grid grid-cols-5 gap-1 px-3 py-4 border-b">
+                  {NAV_ITEMS.map(item => (
+                    <MobileNavLink
+                      key={item.label}
+                      item={item}
+                      active={!!item.href && pathname === item.href}
+                    />
+                  ))}
+                </div>
+
+                <div className="px-3 py-2 space-y-0.5">
+                  <Show when="signed-in">
+                    <button
+                      type="button"
+                      onClick={() => router.push('/static_profile')}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 text-left text-gray-700"
+                    >
+                      <User className="h-5 w-5 text-gray-500" />
+                      <span className="text-sm font-medium">View Profile</span>
+                    </button>
+                  </Show>
+
                   <button
-                    key={label}
                     type="button"
-                    onClick={() => router.push(href)}
+                    onClick={() => router.push('/settings/privacy')}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 text-left text-gray-700"
                   >
-                    <Icon className="h-5 w-5" />
-                    <span className="text-sm">{label}</span>
+                    <Settings className="h-5 w-5 text-gray-500" />
+                    <span className="text-sm font-medium">
+                      Settings & Privacy
+                    </span>
                   </button>
-                ))}
+
+                  <button
+                    type="button"
+                    onClick={() => router.push('/help')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 text-left text-gray-700"
+                  >
+                    <HelpCircle className="h-5 w-5 text-gray-500" />
+                    <span className="text-sm font-medium">Help Center</span>
+                  </button>
+
+                  <Show when="signed-in">
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 text-left text-red-600 mt-1 border-t border-gray-100"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span className="text-sm font-medium">Sign out</span>
+                    </button>
+                  </Show>
+                </div>
               </div>
 
-              {/* Auth (only when signed out) */}
-              <DrawerFooter className="border-t">
-                <SignedOut>
-                  <div className="w-full">
-                    <AuthButtons size="lg" />
-                  </div>
-                </SignedOut>
+              <DrawerFooter className="border-t shrink-0 py-3">
+                <Show when="signed-out">
+                  <AuthButtons size="lg" />
+                </Show>
                 <DrawerClose asChild>
-                  <Button variant="ghost" className="rounded-full">
+                  <Button
+                    variant="outline"
+                    className="rounded-full w-full mt-2"
+                  >
                     Close
                   </Button>
                 </DrawerClose>
@@ -562,20 +587,18 @@ export default function Header() {
       </header>
 
       {/* ═════════════════════════════════════════════════════════
-          DESKTOP HEADER (visible ≥ md)
+          DESKTOP HEADER
           ═════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-40 hidden md:block bg-white border-b border-gray-200">
         <div className="max-w-[1128px] mx-auto flex items-center gap-2 h-14 px-4">
-          {/* Logo */}
           <Link href="/" className="shrink-0 mr-1" aria-label="Home">
             <div className="w-8 h-8 bg-[#0A66C2] rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg leading-none">
+              <span className="text-white font-bold text-[15px] tracking-tighter leading-none mt-0.5">
                 ni
               </span>
             </div>
           </Link>
 
-          {/* Search */}
           <button
             type="button"
             onClick={() => comingSoon('Search')}
@@ -585,7 +608,6 @@ export default function Header() {
             <span className="text-sm text-gray-600 truncate">Search</span>
           </button>
 
-          {/* Main nav (right-aligned) */}
           <nav className="ml-auto flex items-center h-full">
             {NAV_ITEMS.map(item => (
               <DesktopNavItem
@@ -597,23 +619,19 @@ export default function Header() {
             <MoreMenu />
           </nav>
 
-          {/* Vertical divider */}
           <span className="h-8 w-px bg-gray-200 ml-1" />
 
-          {/* Me / Auth */}
           <div className="h-full flex items-center pl-2">
-            <SignedIn>
+            <Show when={'signed-in'}>
               <MeDropdown />
-            </SignedIn>
-            <SignedOut>
+            </Show>
+            <Show when={'signed-out'}>
               <AuthButtons />
-            </SignedOut>
+            </Show>
           </div>
 
-          {/* Vertical divider (xl only) */}
           <span className="h-8 w-px bg-gray-200 hidden xl:block ml-1" />
 
-          {/* Business + Advertise (xl only) */}
           <div className="hidden xl:flex items-center h-full pl-1">
             <BusinessMenuItem icon={Grid3x3} label="For Business" withChevron />
             <BusinessMenuItem icon={Megaphone} label="Advertise" />

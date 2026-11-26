@@ -1,7 +1,7 @@
 // components/UserInformation.tsx
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { IPostDocument } from '@/mongodb/models/post.models';
-import { SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
+import { Show, SignInButton, SignUpButton } from '@clerk/nextjs';
 import { currentUser } from '@clerk/nextjs/server';
 import {
   BarChart3,
@@ -105,7 +105,7 @@ const UserInformation = async ({ posts }: { posts: IPostDocument[] }) => {
           </Avatar>
         </div>
 
-        <SignedIn>
+        <Show when={'signed-in'}>
           <div>
             <h3 className="text-base font-semibold text-gray-900 leading-tight hover:underline cursor-pointer">
               {fullName}
@@ -118,9 +118,9 @@ const UserInformation = async ({ posts }: { posts: IPostDocument[] }) => {
               {lastName.toLowerCase()}-{user?.id?.slice(-4)}
             </p>
           </div>
-        </SignedIn>
+        </Show>
 
-        <SignedOut>
+        <Show when={'signed-out'}>
           <div>
             <h3 className="text-base font-semibold text-gray-900">
               You are not signed in
@@ -129,11 +129,11 @@ const UserInformation = async ({ posts }: { posts: IPostDocument[] }) => {
               Sign in to see your analytics
             </p>
           </div>
-        </SignedOut>
+        </Show>
       </div>
 
       {/* ---- Signed-out CTAs ---- */}
-      <SignedOut>
+      <Show when={'signed-out'}>
         <div className="px-4 pb-4 space-y-2">
           <SignInButton mode="modal">
             <Button
@@ -149,10 +149,10 @@ const UserInformation = async ({ posts }: { posts: IPostDocument[] }) => {
             </Button>
           </SignUpButton>
         </div>
-      </SignedOut>
+      </Show>
 
       {/* ---- Signed-in analytics ---- */}
-      <SignedIn>
+      <Show when={'signed-in'}>
         {/* Divider */}
         <div className="h-px bg-gray-200" />
 
@@ -222,7 +222,7 @@ const UserInformation = async ({ posts }: { posts: IPostDocument[] }) => {
           <Search className="h-3.5 w-3.5" />
           Show all analytics
         </button>
-      </SignedIn>
+      </Show>
     </div>
   );
 };

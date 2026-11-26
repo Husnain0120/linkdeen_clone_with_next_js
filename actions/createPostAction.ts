@@ -1,23 +1,26 @@
-"use server";
+'use server';
 
-import { AddPostRequestBody } from "@/app/api/posts/route";
-import { containerName, generateSASToken } from "@/lib/generateSASToken";
-import { Post } from "@/mongodb/models/post.models";
-import { IUser } from "@/types/user.type";
-import { BlobServiceClient } from "@azure/storage-blob";
-import { currentUser } from "@clerk/nextjs/server";
-import { randomUUID } from "crypto";
-import { revalidatePath } from "next/cache";
+import { AddPostRequestBody } from '@/app/api/posts/route';
+import { containerName, generateSASToken } from '@/lib/generateSASToken';
+import { Post } from '@/mongodb/models/post.models';
+import { IUser } from '@/types/user.type';
+import { BlobServiceClient } from '@azure/storage-blob';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { randomUUID } from 'crypto';
+import { revalidatePath } from 'next/cache';
 
 export default async function createPostAction(formData: FormData) {
+  const user2 = await auth();
+  console.log(user2);
   const user = await currentUser();
+  console.log('User: ', user);
 
-  if (!user) {
-    throw new Error("User not Authenticated");
-  }
+  // if (!user) {
+  //   throw new Error("User not Authenticated");
+  // }
 
-  const postInput = formData.get("postInput") as string;
-  const image = formData.get("image") as File;
+  const postInput = formData.get('postInput') as string;
+  const image = formData.get('image') as File;
 
   let image_Url: string | undefined;
 
@@ -27,22 +30,22 @@ export default async function createPostAction(formData: FormData) {
 
   // Define user
   const userDB: IUser = {
-    userId: user.id,
-    userImage: user.imageUrl,
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
+    userId: user?.id,
+    userImage: user?.imageUrl,
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
   };
 
   try {
     if (image && image.size > 0) {
       // 1. Upload image if there is one
-      console.log("Uploading image to Azure Blob Storage...", image);
+      console.log('Uploading image to Azure Blob Storage...', image);
 
       const accountName = process.env.AZURE_STORAGE_NAME;
       const sasToken = await generateSASToken(); // Get the SAS token
 
       if (!sasToken) {
-        throw new Error("Failed to generate SAS token");
+        throw new Error('Failed to generate SAS token');
       }
 
       // BlobServiceClient with SAS token appended to the URL
@@ -70,7 +73,7 @@ export default async function createPostAction(formData: FormData) {
       // The URL of the uploaded image
       image_Url = res._response.request.url;
 
-      console.log("File uploaded successfully!", image_Url);
+      console.log('File uploaded successfully!', image_Url);
 
       // 2. Create post in the database with the image
       const body: AddPostRequestBody = {
@@ -88,11 +91,11 @@ export default async function createPostAction(formData: FormData) {
       await Post.create(body);
     }
   } catch (error) {
-    console.error("Failed to create post", error); // Log the error for debugging
-    throw new Error("Failed to create Post"); // Generic error for the user
+    console.error('Failed to create post', error); // Log the error for debugging
+    throw new Error('Failed to create Post'); // Generic error for the user
   }
 
   // Revalidate data path if needed
   // revalidatedatapath("/");
-  revalidatePath("/");
+  revalidatePath('/');
 }

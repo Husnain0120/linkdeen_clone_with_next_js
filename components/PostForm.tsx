@@ -1,6 +1,6 @@
 'use client';
 
-import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/nextjs';
+import { Show, SignInButton, useUser } from '@clerk/nextjs';
 import {
   CalendarDays,
   FileText,
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import createPostAction from '@/actions/createPostAction';
@@ -44,6 +44,13 @@ export default function PostForm() {
   const firstName = user?.firstName;
   const lastName = user?.lastName;
   const imageUrl = user?.imageUrl;
+
+  // Listen for custom event from Header to open the modal
+  useEffect(() => {
+    const handleOpen = () => setOpen(true);
+    window.addEventListener('open-create-post', handleOpen);
+    return () => window.removeEventListener('open-create-post', handleOpen);
+  }, []);
 
   const remainingChars = MAX_CHARS - postText.length;
   const isOverLimit = remainingChars < 0;
@@ -95,9 +102,8 @@ export default function PostForm() {
   /* ---------------- LinkedIn-style compact card ---------------- */
   const CreatePostCard = () => (
     <div className="w-full bg-white rounded-lg border border-gray-200 shadow-sm">
-      {/* Top row: avatar + "Start a post" */}
       <div className="p-3 pb-2">
-        <SignedIn>
+        <Show when={'signed-in'}>
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -114,9 +120,9 @@ export default function PostForm() {
               Start a post
             </span>
           </button>
-        </SignedIn>
+        </Show>
 
-        <SignedOut>
+        <Show when={'signed-out'}>
           <SignInButton mode="modal">
             <button
               type="button"
@@ -128,10 +134,9 @@ export default function PostForm() {
               </span>
             </button>
           </SignInButton>
-        </SignedOut>
+        </Show>
       </div>
 
-      {/* Divider + action row */}
       <div className="border-t border-gray-100 mx-3" />
       <div className="flex items-center justify-around px-2 py-1.5">
         <ActionButton
@@ -139,7 +144,6 @@ export default function PostForm() {
           label="Photo"
           onClick={() => {
             setOpen(true);
-            // slight delay so modal mounts before opening file picker
             setTimeout(() => fileInputRef.current?.click(), 150);
           }}
         />
@@ -172,7 +176,6 @@ export default function PostForm() {
     <>
       <CreatePostCard />
 
-      {/* Hidden file input lives at root so Photo button can trigger it */}
       <input
         ref={fileInputRef}
         type="file"
@@ -182,13 +185,15 @@ export default function PostForm() {
         onChange={handleImageChange}
       />
 
-      {/* Modal */}
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL (Fully Responsive for Mobile & Desktop)
+          ═══════════════════════════════════════════════════════════ */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="p-0 gap-0 max-w-2xl w-[95vw] sm:w-full rounded-xl overflow-hidden [&>button]:hidden">
+        <DialogContent className="p-0 gap-0 w-full h-[100dvh] sm:h-auto sm:w-[95vw] sm:max-w-2xl rounded-none sm:rounded-xl overflow-hidden flex flex-col sm:max-h-[90vh] [&>button]:hidden">
           <DialogTitle className="sr-only">Create post</DialogTitle>
 
-          {/* Header — LinkedIn style */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          {/* ─── HEADER (Fixed) ─── */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
             <div className="flex items-center gap-2.5">
               <Avatar className="h-11 w-11">
                 <AvatarImage src={imageUrl} />
@@ -225,7 +230,7 @@ export default function PostForm() {
             </Button>
           </div>
 
-          {/* Body */}
+          {/* ─── BODY (Scrollable area) ─── */}
           <form
             id="post-form"
             ref={formRef}
@@ -237,46 +242,43 @@ export default function PostForm() {
                 error: err => `Failed to create post: ${err.message}`,
               });
             }}
-            className="flex flex-col max-h-[70vh] overflow-y-auto"
+            className="flex flex-col flex-1 min-h-0" // min-h-0 is crucial for flex scroll
           >
-            <div className="px-4 pt-4">
+            <div className="overflow-y-auto flex-1 p-4 flex flex-col gap-4">
               <textarea
                 name="postInput"
                 value={postText}
                 onChange={e => setPostText(e.target.value)}
                 placeholder="What do you want to talk about?"
-                rows={6}
                 autoFocus
-                className="w-full resize-none bg-transparent text-[15px] md:text-base text-gray-800 placeholder:text-gray-400 outline-none leading-relaxed"
+                className="w-full resize-none bg-transparent text-[15px] md:text-base text-gray-800 placeholder:text-gray-400 outline-none leading-relaxed min-h-[120px] flex-1"
               />
-            </div>
 
-            {/* Live hashtag chips */}
-            {hashtags.length > 0 && (
-              <div className="px-4 pb-3 flex flex-wrap items-center gap-1.5">
-                <Hash className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                {hashtags.map(tag => (
-                  <span
-                    key={tag}
-                    className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
+              {/* Live hashtag chips */}
+              {hashtags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                  <Hash className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                  {hashtags.map(tag => (
+                    <span
+                      key={tag}
+                      className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-            {/* Image preview */}
-            {preview && (
-              <div className="px-4 pb-4">
-                <div className="relative rounded-lg overflow-hidden bg-gray-50 border border-gray-100">
+              {/* Image preview */}
+              {preview && (
+                <div className="relative rounded-lg overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
                   <Image
                     src={preview}
                     alt="Preview"
                     width={800}
                     height={800}
                     unoptimized
-                    className="w-full h-auto max-h-[400px] object-cover"
+                    className="w-full h-auto max-h-[300px] sm:max-h-[400px] object-cover"
                   />
                   <Button
                     type="button"
@@ -289,50 +291,50 @@ export default function PostForm() {
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Attachment row (mimics LinkedIn's media options) */}
-            <div className="px-4 pb-3 flex items-center gap-1">
-              <span className="text-xs font-semibold text-gray-500 mr-2">
-                Add to your post
-              </span>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="p-2 rounded-full hover:bg-blue-50 transition-colors"
-                aria-label="Add photo"
-              >
-                <ImageIcon className="h-5 w-5 text-[#378fe9]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => toast.info('Video upload coming soon')}
-                className="p-2 rounded-full hover:bg-green-50 transition-colors"
-                aria-label="Add video"
-              >
-                <Video className="h-5 w-5 text-[#5f9b41]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => toast.info('Events coming soon')}
-                className="p-2 rounded-full hover:bg-orange-50 transition-colors"
-                aria-label="Add event"
-              >
-                <CalendarDays className="h-5 w-5 text-[#c37d16]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => toast.info('Article writing coming soon')}
-                className="p-2 rounded-full hover:bg-red-50 transition-colors"
-                aria-label="Write article"
-              >
-                <FileText className="h-5 w-5 text-[#e16745]" />
-              </button>
+              {/* Attachment row */}
+              <div className="flex items-center gap-1 shrink-0 mt-auto">
+                <span className="text-xs font-semibold text-gray-500 mr-2 hidden sm:inline">
+                  Add to your post
+                </span>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 rounded-full hover:bg-blue-50 transition-colors"
+                  aria-label="Add photo"
+                >
+                  <ImageIcon className="h-5 w-5 text-[#378fe9]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info('Video upload coming soon')}
+                  className="p-2 rounded-full hover:bg-green-50 transition-colors"
+                  aria-label="Add video"
+                >
+                  <Video className="h-5 w-5 text-[#5f9b41]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info('Events coming soon')}
+                  className="p-2 rounded-full hover:bg-orange-50 transition-colors"
+                  aria-label="Add event"
+                >
+                  <CalendarDays className="h-5 w-5 text-[#c37d16]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info('Article writing coming soon')}
+                  className="p-2 rounded-full hover:bg-red-50 transition-colors"
+                  aria-label="Write article"
+                >
+                  <FileText className="h-5 w-5 text-[#e16745]" />
+                </button>
+              </div>
             </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+            {/* ─── FOOTER (Fixed at bottom) ─── */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50 shrink-0">
               <span
                 className={
                   isOverLimit
@@ -348,7 +350,7 @@ export default function PostForm() {
                 form="post-form"
                 type="submit"
                 disabled={!canPost}
-                className="rounded-full px-5 h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                className="rounded-full px-6 h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 {isPosting ? (
                   <>
