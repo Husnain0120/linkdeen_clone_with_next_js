@@ -105,7 +105,7 @@ const Post = ({ post }: { post: IPostDocument }) => {
               {post.user.lastName}-{post.user.userId.toString().slice(-4)}
             </span>
             <span className="text-gray-300">·</span>
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap text-blue-800">
               <ReactTimeago date={new Date(post.createdAt)} />
             </span>
           </div>

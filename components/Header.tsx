@@ -292,8 +292,7 @@ function MeDropdown() {
 
           <button
             onClick={() => {
-              setOpen(false);
-              comingSoon('Profile');
+              router.push('/static_profile');
             }}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
@@ -410,7 +409,7 @@ export default function Header() {
           <Link href="/" className="shrink-0" aria-label="Home">
             <div className="w-8 h-8 bg-[#0A66C2] rounded flex items-center justify-center">
               <span className="text-white font-bold text-lg leading-none">
-                in
+                R
               </span>
             </div>
           </Link>
@@ -500,9 +499,9 @@ export default function Header() {
         <div className="max-w-[1128px] mx-auto flex items-center gap-2 h-14 px-4">
           {/* Logo */}
           <Link href="/" className="shrink-0 mr-1" aria-label="Home">
-            <div className="w-8 h-8 bg-[#0A66C2] rounded flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#0A66C2] rounded-full flex  items-center justify-center">
               <span className="text-white font-bold text-lg leading-none">
-                in
+                ni
               </span>
             </div>
           </Link>

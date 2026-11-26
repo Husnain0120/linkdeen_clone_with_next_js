@@ -1,3 +1,4 @@
+import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import { Toaster } from '@/components/ui/sonner';
 import { ClerkLoaded, ClerkLoading, ClerkProvider } from '@clerk/nextjs';
@@ -148,7 +149,29 @@ export default function RootLayout({
 
           {/* ---------- App ---------- */}
           <ClerkLoaded>
-            <Toaster position="top-center" richColors closeButton />
+            {/* 🎯 Pro Toaster — Bottom Right, no close button */}
+            <Toaster
+              position="bottom-right"
+              richColors
+              expand={false}
+              duration={3000}
+              toastOptions={{
+                classNames: {
+                  toast:
+                    'group !bg-white !border !border-gray-200 !shadow-lg !shadow-black/5 !rounded-xl !font-sans',
+                  title: '!text-[13.5px] !font-semibold !text-gray-900',
+                  description: '!text-[12.5px] !text-gray-600',
+                  actionButton:
+                    '!bg-[#0a66c2] !text-white !text-xs !font-medium !rounded-md',
+                  cancelButton:
+                    '!bg-gray-100 !text-gray-700 !text-xs !font-medium !rounded-md',
+                  success: '!bg-white',
+                  error: '!bg-white',
+                  info: '!bg-white',
+                  warning: '!bg-white',
+                },
+              }}
+            />
 
             {/* Header component already renders <header> internally — no wrapper */}
             <Header />
@@ -156,6 +179,7 @@ export default function RootLayout({
             <div className="bg-[#f4f2ed] flex-1 w-full">
               <main className="max-w-6xl mx-auto px-0 sm:px-4">{children}</main>
             </div>
+            <Footer />
           </ClerkLoaded>
         </body>
       </html>

@@ -1,5 +1,6 @@
-import { IUser } from "@/types/user.type";
-import mongoose, { Schema, Document, models } from "mongoose";
+// mongodb/models/comment.models.ts
+import { IUser } from '@/types/user.type';
+import mongoose, { Document, models, Schema } from 'mongoose';
 
 export interface ICommentBase {
   user: IUser;
@@ -15,9 +16,10 @@ const CommentsSchema = new Schema<IComment>(
   {
     user: {
       userId: { type: String, required: true },
-      userImage: { type: String, required: true },
-      firstName: { type: String, required: true },
-      lastName: { type: String },
+      // ✅ required hatao — empty allowed
+      userImage: { type: String, default: '' },
+      firstName: { type: String, default: '' },
+      lastName: { type: String, default: '' },
     },
     text: { type: String, required: true },
   },
@@ -27,4 +29,4 @@ const CommentsSchema = new Schema<IComment>(
 );
 
 export const Comment =
-  models.Comment || mongoose.model<IComment>("Comment", CommentsSchema);
+  models.Comment || mongoose.model<IComment>('Comment', CommentsSchema);

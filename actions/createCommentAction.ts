@@ -1,44 +1,41 @@
-"use server";
+'use server';
 
-import { AddCommentRequestBody } from "@/app/api/posts/[post_id]/comments/route";
-import { ICommentBase } from "@/mongodb/models/comment.models";
-import { Post } from "@/mongodb/models/post.models";
-import { IUser } from "@/types/user.type";
-import { currentUser } from "@clerk/nextjs/server";
-import { revalidatePath } from "next/cache";
+import { ICommentBase } from '@/mongodb/models/comment.models';
+import { Post } from '@/mongodb/models/post.models';
+import { IUser } from '@/types/user.type';
+import { currentUser } from '@clerk/nextjs/server';
+import { revalidatePath } from 'next/cache';
 
 export default async function createCommentAction(
   postId: string,
   formData: FormData
 ) {
-  const user = await currentUser();
+  const user = await currentUser(); // If user is not authenticated, throw an error\
+  console.log(user);
+  console.log(user); // if (!user?.id) {
+  //   throw new Error("User not authenticated");
+  // }
+  const commentInput = formData.get('commentInput') as string;
 
-  // If user is not authenticated, throw an error
-  if (!user?.id) {
-    throw new Error("User not authenticated");
-  }
-
-  const commentInput = formData.get("commentInput") as string;
-
-  if (!postId) throw new Error("Post id is required");
-  if (!commentInput) throw new Error("Comment input is required");
+  if (!postId) throw new Error('Post id is required');
+  if (!commentInput) throw new Error('Comment input is required');
 
   const userDB: IUser = {
-    userId: user.id,
-    userImage: user.imageUrl,
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
+    userId: user?.id || '',
+    userImage: user?.imageUrl || '',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
   };
 
-  const body: AddCommentRequestBody = {
-    user: userDB,
-    text: commentInput,
-  };
+  // const body: AddCommentRequestBody = {
+  //   user: userDB,
+  //   text: commentInput,
+  // };
 
   const post = await Post.findById(postId);
 
   if (!post) {
-    throw new Error("Post not found");
+    throw new Error('Post not found');
   }
 
   const comment: ICommentBase = {
@@ -48,8 +45,9 @@ export default async function createCommentAction(
 
   try {
     await post.commentOnPost(comment);
-    revalidatePath("/");
+    revalidatePath('/');
   } catch (error) {
-    throw new Error("An error occurred while adding the comment");
+    console.log(error.message);
+    throw new Error('An error occurred while adding the comment');
   }
 }
